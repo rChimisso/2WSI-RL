@@ -65,7 +65,7 @@ def execution(name: str, color: str, fixed: bool):
   min_green=10
   max_green=50
   gui=False
-  seconds=100
+  seconds=10
   experiment_time = str(datetime.now()).split('.')[0]
   out_csv = f'outputs/single-intersection/{experiment_time}_alpha{alpha}_gamma{gamma}_eps{epsilon}_decay{decay}_fixed{fixed}'.replace(':', '-')
 
@@ -124,7 +124,8 @@ def execution(name: str, color: str, fixed: bool):
 
   for metric in metrics:
     metrics[metric]['plot'].plot(metrics[metric][name], color=color)
-    bbox = Bbox.from_extents(0, 0, 1, 1)
+    #3 pare essere il padding
+    bbox = Bbox.from_bounds(3, 3, 13, 13)
     pl.savefig(f'{metric}_plot.png', bbox_inches=bbox)
     # display.clear_output(wait=True)
     # display.display(pl.gcf())
