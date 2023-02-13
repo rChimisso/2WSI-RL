@@ -1,0 +1,16 @@
+https://sumo.dlr.de/docs/
+https://github.com/LucasAlegre/sumo-rl
+
+SUMO
+pip3 install sumo-rl
+pip3 install matplotlib
+
+- Creazione situazione di traffico (.net.xml con la rete stradale e .rou.xml con il traffico)
+- capire come impostare la gestione di 2wsi a ciclo fisso
+- capire come impostare agenti per controllo di 2wsi
+- ultimi 2 punti con impostazioni di traffico varie
+- capire come confrontare performance di modelli diversi
+
+
+
+- preparare relazione e presentazione
