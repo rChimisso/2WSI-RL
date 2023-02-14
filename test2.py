@@ -3,7 +3,7 @@ import sys
 from datetime import datetime
 import pylab as pl
 from IPython import display
-from matplotlib.transforms import Bbox
+from matplotlib.transforms import Bbox, Affine2D
 
 if 'SUMO_HOME' in os.environ:
   tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -51,7 +51,7 @@ for metric in metrics:
   index = list(metrics.keys()).index(metric)
   col_index = index % 2 * 2
   metrics[metric]['plot'] = figure.add_subplot(gridspec[index // 2, col_index:(col_index + 2)])
-  metrics[metric]['plot'].set_title(f'{metric} / time')
+  metrics[metric]['plot'].set_title(f'{metric} over time')
   metrics[metric]['plot'].set_xlabel('step')
   metrics[metric]['plot'].set_ylabel(metric)
 
@@ -119,14 +119,15 @@ def execution(name: str, color: str, fixed: bool):
       for agent_id in ql_agents.keys():
         ql_agents[agent_id].learn(next_state=env.encode(s[agent_id], agent_id), reward=r[agent_id])
 
-  env.save_csv(out_csv, 1)
+  # env.save_csv(out_csv, 1)
   env.close()
 
   for metric in metrics:
     metrics[metric]['plot'].plot(metrics[metric][name], color=color)
-    #3 pare essere il padding
-    bbox = Bbox.from_bounds(3, 3, 13, 13)
-    pl.savefig(f'{metric}_plot.png', bbox_inches=bbox)
+    bbox: Bbox = metrics[metric]['plot'].get_tightbbox()
+    dpi = figure.get_dpi()
+    bbox = Bbox.from_extents(bbox.x0 / dpi, bbox.y0 / dpi, bbox.xmax / dpi, bbox.ymax / dpi)
+    pl.savefig(f'{metric}_plot.png', bbox_inches=bbox.expanded(1.01, 1.01))
     # display.clear_output(wait=True)
     # display.display(pl.gcf())
 
