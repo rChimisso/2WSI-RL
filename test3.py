@@ -10,7 +10,6 @@ else:
 from sumo_rl import SumoEnvironment
 import traci
 
-
 def execution(updateMetrics: Callable[[str, dict[str, float]], None], name: str, seconds: int, fixed: bool):
   env = SumoEnvironment(
     net_file='nets/2way-single-intersection/single-intersection.net.xml',
