@@ -13,7 +13,7 @@ from sumo_rl import SumoEnvironment
 from sumo_rl.agents import QLAgent
 from sumo_rl.exploration import EpsilonGreedy
 
-def execution(updateMetrics: Callable[[str, dict[str, int | float]], None], name: str, seconds: int, fixed: bool):
+def execution(updateMetrics: Callable[[str, dict[str, float]], None], name: str, seconds: int, fixed: bool):
   route='nets/single-intersection/single-intersection.rou.xml'
   alpha=0.1
   gamma=0.99
