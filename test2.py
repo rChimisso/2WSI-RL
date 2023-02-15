@@ -1,7 +1,6 @@
 import os
 import sys
 from datetime import datetime
-from IPython import display
 from typing import Callable
 
 if 'SUMO_HOME' in os.environ:
@@ -14,7 +13,7 @@ from sumo_rl import SumoEnvironment
 from sumo_rl.agents import QLAgent
 from sumo_rl.exploration import EpsilonGreedy
 
-def execution(updateMetrics: Callable[[str, dict[str, int | float]], None], name: str, fixed: bool):
+def execution(updateMetrics: Callable[[str, dict[str, int | float]], None], name: str, seconds: int, fixed: bool):
   route='nets/single-intersection/single-intersection.rou.xml'
   alpha=0.1
   gamma=0.99
@@ -24,7 +23,6 @@ def execution(updateMetrics: Callable[[str, dict[str, int | float]], None], name
   min_green=10
   max_green=50
   gui=False
-  seconds=10
   experiment_time = str(datetime.now()).split('.')[0]
   out_csv = f'outputs/single-intersection/{experiment_time}_alpha{alpha}_gamma{gamma}_eps{epsilon}_decay{decay}_fixed{fixed}'.replace(':', '-')
 
