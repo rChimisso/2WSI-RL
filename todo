@@ -2,8 +2,8 @@ https://sumo.dlr.de/docs/
 https://github.com/LucasAlegre/sumo-rl
 
 SUMO
-Anaconda
-Python 3.9.13
+Anaconda (Python 3.9.13)
+conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
 pip3 install sumo-rl
 pip3 install matplotlib
 pip3 install git+https://github.com/DLR-RM/stable-baselines3@feat/gymnasium-support
