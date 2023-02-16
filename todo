@@ -14,6 +14,6 @@ pip3 install git+https://github.com/DLR-RM/stable-baselines3@feat/gymnasium-supp
 - ultimi 2 punti con impostazioni di traffico varie
 - capire come confrontare performance di modelli diversi
 
-
+Creare 3 file (Fisso, QL, DQL), ciclare su 2 file di traffico (e su ogni agente), plottare e salvare ciascun grafico separatamente e assieme.
 
 - preparare relazione e presentazione
