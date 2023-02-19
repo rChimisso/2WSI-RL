@@ -8,12 +8,9 @@ pip3 install sumo-rl
 pip3 install matplotlib
 pip3 install git+https://github.com/DLR-RM/stable-baselines3@feat/gymnasium-support
 
+- Gestione parametri extra ql e dql
 - Creazione situazione di traffico (.net.xml con la rete stradale e .rou.xml con il traffico)
-- capire come impostare la gestione di 2wsi a ciclo fisso
-- capire come impostare agenti per controllo di 2wsi
-- ultimi 2 punti con impostazioni di traffico varie
-- capire come confrontare performance di modelli diversi
-
-Creare 3 file (Fisso, QL, DQL), ciclare su 2 file di traffico (e su ogni agente), plottare e salvare ciascun grafico separatamente e assieme.
-
-- preparare relazione e presentazione
+- Comprensione grafici
+- Pulizia codice
+- Scrittura relazione (GDocs)
+- Trascrizione relazione (readme)

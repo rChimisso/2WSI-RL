@@ -17,7 +17,7 @@
 <br/>
 
 # Obiettivo
-Si vuole confrontare per un particolare tipo di intersezione semaforizzata, riferita d’ora in poi con 2 way single intersection (2wsi), uno schema di gestione dei semafori a ciclo fisso con due diversi schemi di gestione controllati da agenti che hanno appreso per rinforzo.
+Si vuole confrontare per un particolare tipo di intersezione semaforizzata, riferita d’ora in poi con **2wsi** (**2** **w**ay **s**ingle **i**ntersection), uno schema di gestione dei semafori a ciclo fisso con due diversi schemi di gestione controllati da agenti che hanno appreso per rinforzo.
 
 <br/>
 <br/>
