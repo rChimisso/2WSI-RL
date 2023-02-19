@@ -1,7 +1,7 @@
 import os
 import sys
 from datetime import datetime
-from typing import Union, Callable
+from typing import Union, Callable, Generic, TypeVar
 from abc import ABC, abstractmethod
 from utils.plotter import Plotter, Metric
 from stable_baselines3.dqn.dqn import DQN
@@ -14,28 +14,28 @@ from sumo_rl import SumoEnvironment
 from sumo_rl.agents import QLAgent
 from sumo_rl.exploration import EpsilonGreedy
 
-class TrafficAgent(ABC):
+A = TypeVar('A')
+
+class TrafficAgent(ABC, Generic[A]):
   def __init__(
     self,
     name: str,
     color: str,
-    fixed_ts: bool,
-    single_agent: bool,
-    net_file: str,
-    route_file: str,
-    num_seconds: int,
+    fixed: bool,
+    net: str,
+    rou: str,
+    seconds: int,
     delta_time: int,
     yellow_time: int,
     min_green: int,
-    max_green: int,
+    max_green: int
   ) -> None:
     self.name = name
     self.color = color
-    self.fixed_ts = fixed_ts
-    self.single_agent = single_agent
-    self.net_file = net_file
-    self.route_file = route_file
-    self.num_seconds = num_seconds
+    self.fixed = fixed
+    self.net = net
+    self.rou = rou
+    self.seconds = seconds
     self.delta_time = delta_time
     self.yellow_time = yellow_time
     self.min_green = min_green
@@ -55,19 +55,19 @@ class TrafficAgent(ABC):
     add_per_agent_info: bool
   ) -> SumoEnvironment:
     return SumoEnvironment(
-      net_file = self.net_file,
-      route_file = self.route_file,
+      net_file = self.net,
+      route_file = self.rou,
       out_csv_name = out_csv_name,
       use_gui = use_gui,
-      num_seconds = self.num_seconds,
+      num_seconds = self.seconds,
       delta_time = self.delta_time,
       yellow_time = self.yellow_time,
       min_green = self.min_green,
       max_green = self.max_green,
       add_system_info = add_system_info,
       add_per_agent_info = add_per_agent_info,
-      fixed_ts = self.fixed_ts,
-      single_agent = self.single_agent
+      fixed_ts = self.fixed,
+      single_agent = True
     )
   
   @abstractmethod
@@ -80,7 +80,7 @@ class TrafficAgent(ABC):
       callback(info[metric], metric, self.name)
 
   @abstractmethod
-  def _learn(self, env: SumoEnvironment, agent, update_metrics: Callable[[dict[Metric, float]], None]) -> None:
+  def _learn(self, env: SumoEnvironment, agent: A, update_metrics: Callable[[dict[Metric, float]], None]) -> None:
     raise NotImplementedError()
   
   @abstractmethod
@@ -102,7 +102,7 @@ class TrafficAgent(ABC):
   ) -> None:
     env = self._get_env(
       self._get_csv_name(
-        ('num_seconds', self.num_seconds),
+        ('seconds', self.seconds),
         ('delta_time', self.delta_time),
         ('yellow_time', self.yellow_time),
         ('min_green', self.min_green),
@@ -118,56 +118,89 @@ class TrafficAgent(ABC):
     self._save_plots()
     env.close()
 
-class FixedCycleTrafficAgent(TrafficAgent):
+class FixedCycleTrafficAgent(TrafficAgent[None]):
   def __init__(
     self,
     name: str,
     color: str,
-    net_file: str,
-    route_file: str,
-    num_seconds: int,
+    net: str,
+    rou: str,
+    seconds: int,
     delta_time: int,
     yellow_time: int,
     min_green: int,
     max_green: int
   ) -> None:
-    super().__init__(name, color, True, False, net_file, route_file, num_seconds, delta_time, yellow_time, min_green, max_green)
+    super().__init__(name, color, True, net, rou, seconds, delta_time, yellow_time, min_green, max_green)
 
   def _get_agent(self, _: SumoEnvironment) -> None:
     return None
 
-  def _learn(self, env: SumoEnvironment, _: None, update_metrics: Callable[[dict[Metric, float]], None]):
+  def _learn(self, env: SumoEnvironment, _, update_metrics: Callable[[dict[Metric, float]], None]):
     env.reset()
-    done: dict[str, bool] = {'__all__': False}
-    while not done['__all__']:
-      _, _, done, _ = env.step({}) # type: ignore
+    done = False
+    while not done:
+      done = self._step(env)
       update_metrics(env.metrics[-1])
+
+  def _step(self, env: SumoEnvironment):
+    for _ in range(self.delta_time):
+      env._sumo_step()
+    env._compute_observations()
+    env._compute_rewards()
+    env._compute_info()
+    return env._compute_dones()['__all__']
 
   def _save_model(self):
     pass
 
-class QLearningTrafficAgent(TrafficAgent):
+class LearningTrafficAgent(TrafficAgent[A], ABC, Generic[A]):
   def __init__(
     self,
     name: str,
     color: str,
-    net_file: str,
-    route_file: str,
-    num_seconds: int,
+    net: str,
+    rou: str,
+    seconds: int,
     delta_time: int,
     yellow_time: int,
     min_green: int,
     max_green: int,
-    alpha: float = 0.1,
-    gamma: float = 0.99,
-    initial_epsilon: float = 1,
-    min_epsilon: float = 0.005
+    alpha: float,
+    gamma: float,
+    init_eps: float,
+    min_eps: float,
+    decay: float
   ) -> None:
-    super().__init__(name, color, False, True, net_file, route_file, num_seconds, delta_time, yellow_time, min_green, max_green)
+    super().__init__(name, color, False, net, rou, seconds, delta_time, yellow_time, min_green, max_green)
     self.alpha = alpha
     self.gamma = gamma
-    self.initial_epsilon = initial_epsilon
-    self.min_epsilon = min_epsilon
+    self.init_eps = init_eps
+    self.min_eps = min_eps
+    self.decay = decay
+  
+  def _get_csv_name(self, *args: tuple[str, Union[int, float]]) -> str:
+    return f'{super()._get_csv_name(*args)},alpha={self.alpha},gamma={self.gamma},init_eps={self.init_eps},min_eps={self.min_eps},decay={self.decay}'
+
+class QLearningTrafficAgent(LearningTrafficAgent[QLAgent]):
+  def __init__(
+    self,
+    name: str,
+    color: str,
+    net: str,
+    rou: str,
+    seconds: int,
+    delta_time: int,
+    yellow_time: int,
+    min_green: int,
+    max_green: int,
+    alpha: float,
+    gamma: float,
+    init_eps: float,
+    min_eps: float,
+    decay: float
+  ) -> None:
+    super().__init__(name, color, net, rou, seconds, delta_time, yellow_time, min_green, max_green, alpha, gamma, init_eps, min_eps, decay)
 
   def _get_agent(self, env: SumoEnvironment) -> QLAgent:
     return QLAgent(
@@ -177,9 +210,9 @@ class QLearningTrafficAgent(TrafficAgent):
       alpha = self.alpha,
       gamma = self.gamma,
       exploration_strategy = EpsilonGreedy(
-        initial_epsilon = self.initial_epsilon,
-        min_epsilon = self.min_epsilon,
-        decay = 0.9
+        initial_epsilon = self.init_eps,
+        min_epsilon = self.min_eps,
+        decay = self.decay
       )
     )
 
@@ -194,28 +227,25 @@ class QLearningTrafficAgent(TrafficAgent):
   def _save_model(self):
     pass
 
-class DeepQLearningTrafficAgent(TrafficAgent):
+class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
   def __init__(
     self,
     name: str,
     color: str,
-    net_file: str,
-    route_file: str,
-    num_seconds: int,
+    net: str,
+    rou: str,
+    seconds: int,
     delta_time: int,
     yellow_time: int,
     min_green: int,
     max_green: int,
-    alpha: float = 0.1,
-    gamma: float = 0.99,
-    initial_epsilon: float = 1,
-    min_epsilon: float = 0.005
+    alpha: float,
+    gamma: float,
+    init_eps: float,
+    min_eps: float,
+    decay_time: float
   ) -> None:
-    super().__init__(name, color, False, True, net_file, route_file, (num_seconds + delta_time) // delta_time, delta_time, yellow_time, min_green, max_green)
-    self.alpha = alpha
-    self.gamma = gamma
-    self.initial_epsilon = initial_epsilon
-    self.min_epsilon = min_epsilon
+    super().__init__(name, color, net, rou, (seconds + delta_time) // delta_time, delta_time, yellow_time, min_green, max_green, alpha, gamma, init_eps, min_eps, decay_time)
 
   def _get_agent(self, env: SumoEnvironment) -> DQN:
     return DQN(
@@ -225,16 +255,16 @@ class DeepQLearningTrafficAgent(TrafficAgent):
       learning_starts = 0,
       gamma = self.gamma,
       train_freq = 1,
-      gradient_steps = 1,
+      gradient_steps = -1,
       target_update_interval = 500,
-      exploration_fraction = 0.1,
-      exploration_initial_eps = self.initial_epsilon,
-      exploration_final_eps = self.min_epsilon,
+      exploration_fraction = self.decay,
+      exploration_initial_eps = self.init_eps,
+      exploration_final_eps = self.min_eps,
       verbose = 1
     )
 
   def _learn(self, _: SumoEnvironment, agent: DQN, update_metrics: Callable[[dict[Metric, float]], None]):
-    agent.learn(total_timesteps = self.num_seconds, callback = lambda locals, _: update_metrics(locals['infos'][0]))
+    agent.learn(total_timesteps = self.seconds, callback = lambda locals, _: update_metrics(locals['infos'][0]))
 
   def _save_model(self):
     pass

@@ -8,7 +8,6 @@ pip3 install sumo-rl
 pip3 install matplotlib
 pip3 install git+https://github.com/DLR-RM/stable-baselines3@feat/gymnasium-support
 
-- Gestione parametri extra ql e dql
 - Salvataggio modelli
 - Multiple run, plotting di grafici e valori medi (run con iperparametri diversi?)
 - Comprensione grafici
