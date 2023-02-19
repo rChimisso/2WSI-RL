@@ -8,7 +8,7 @@ pip3 install sumo-rl
 pip3 install matplotlib
 pip3 install git+https://github.com/DLR-RM/stable-baselines3@feat/gymnasium-support
 
-- Salvataggio modelli
+- Salvataggio modelli (da completare)
 - Multiple run, plotting di grafici e valori medi (run con iperparametri diversi?)
 - Comprensione grafici
 - Creazione situazione di traffico (.net.xml con la rete stradale e .rou.xml con il traffico)

@@ -1,7 +1,6 @@
 from typing import TypedDict, Literal, Union
 import pylab as pl
 from matplotlib.transforms import Bbox
-from matplotlib.lines import Line2D
 # from matplotlib.colors 
 from pathlib import Path
 
@@ -59,7 +58,7 @@ class Canvas():
     return self._figure.canvas.get_renderer()
 
   def get_plot(self, metric: Metric) -> Union[pl.Axes, None]:
-    if (metric in self._metrics):
+    if metric in self._metrics:
       return self._metrics[metric]
     return None
 
@@ -68,13 +67,13 @@ class Canvas():
 
   def save(self, metric: Metric, folder: Union[str, None] = None) -> None:
     plot = self.get_plot(metric)
-    bbox = plot.get_tightbbox(renderer = self.renderer) if (plot is not None) else None
-    if (bbox is not None):
+    bbox = plot.get_tightbbox(renderer = self.renderer) if plot is not None else None
+    if bbox is not None:
       dpi = self.figure.get_dpi()
       bbox = Bbox.from_extents(bbox.x0 / dpi, bbox.y0 / dpi, bbox.xmax / dpi, bbox.ymax / dpi)
-      subfolder = f'/{folder}' if folder is not None else ''
-      Path(f'outputs/plots{subfolder}/').mkdir(parents = True, exist_ok = True)
-      self.figure.savefig(f'outputs/plots{subfolder}/{metric}_plot.png', bbox_inches = bbox.expanded(1.01, 1.01))
+      subfolder = f'{folder}/' if folder is not None else ''
+      Path(f'outputs/{subfolder}plots/').mkdir(parents = True, exist_ok = True)
+      self.figure.savefig(f'outputs/{subfolder}plots/{metric}_plot.png', bbox_inches = bbox.expanded(1.01, 1.01))
 
 class Plotter():
   def __init__(
@@ -83,11 +82,10 @@ class Plotter():
     metrics: list[Metric],
     plots_per_row: int = default_plots_per_row,
     dpi: int = default_dpi,
-    x_lim: Union[float, None] = None,
     canvas: Union[Canvas, None] = None
   ) -> None:
     self.color = color
-    if (canvas is None):
+    if canvas is None:
       self.canvas = Canvas(metrics, plots_per_row, dpi)
     else:
       self.canvas = canvas
@@ -106,14 +104,14 @@ class Plotter():
     return plot
 
   def append(self, new_data: float, metric: Metric) -> None:
-    if (metric in self.metrics):
+    if metric in self.metrics:
       self.metrics[metric].append(new_data)
 
   def plot(self, metric: Metric, label: Union[str, None] = None):
-    if (metric in self.metrics):
+    if metric in self.metrics:
       plot = self.canvas.get_plot(metric)
-      if (plot is not None):
-        if (label is None):
+      if plot is not None:
+        if label is None:
           plot.plot(self.metrics[metric], color = self.color)
         else:
           plot.plot(self.metrics[metric], color = self.color, label = label)
@@ -137,11 +135,11 @@ class MultiPlotter():
     self.plotters: dict[str, Plotter] = {agent['name']: Plotter(agent['color'], metrics, plots_per_row, dpi, canvas = self.canvas) for agent in agents}
 
   def append(self, new_data: float, metric: Metric, agent: str) -> None:
-    if (agent in self.plotters):
+    if agent in self.plotters:
       self.plotters[agent].append(new_data, metric)
 
   def plot(self, metric: Metric, agent: str):
-    if (agent in self.plotters):
+    if agent in self.plotters:
       return self.plotters[agent].plot(metric)
 
   def save(self):
