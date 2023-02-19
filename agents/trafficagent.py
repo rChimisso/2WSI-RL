@@ -131,7 +131,7 @@ class FixedCycleTrafficAgent(TrafficAgent):
     min_green: int,
     max_green: int
   ) -> None:
-    super().__init__(name, color, True, False, net_file, route_file, num_seconds - 5, delta_time, yellow_time, min_green, max_green)
+    super().__init__(name, color, True, False, net_file, route_file, num_seconds - delta_time, delta_time, yellow_time, min_green, max_green)
 
   def _get_agent(self, _: SumoEnvironment) -> None:
     return None
@@ -163,7 +163,7 @@ class QLearningTrafficAgent(TrafficAgent):
     initial_epsilon: float = 1,
     min_epsilon: float = 0.005
   ) -> None:
-    super().__init__(name, color, False, False, net_file, route_file, num_seconds - 5, delta_time, yellow_time, min_green, max_green)
+    super().__init__(name, color, False, False, net_file, route_file, num_seconds - delta_time, delta_time, yellow_time, min_green, max_green)
     self.alpha = alpha
     self.gamma = gamma
     self.initial_epsilon = initial_epsilon
