@@ -40,7 +40,7 @@ class TrafficAgent(ABC):
     self.yellow_time = yellow_time
     self.min_green = min_green
     self.max_green = max_green
-    self.plotter = Plotter(color, ['system_total_stopped', 'system_total_waiting_time', 'system_mean_waiting_time', 'system_mean_speed', 't_stopped', 't_accumulated_waiting_time', 't_average_speed', 'agents_total_stopped', 'agents_total_accumulated_waiting_time'], x_lim = num_seconds)
+    self.plotter = Plotter(color, ['system_total_stopped', 'system_total_waiting_time', 'system_mean_waiting_time', 'system_mean_speed', 't_stopped', 't_accumulated_waiting_time', 't_average_speed', 'agents_total_stopped', 'agents_total_accumulated_waiting_time'])
 
   def _get_csv_name(self, *args: tuple[str, Union[int, float]]) -> str:
     experiment_time = str(datetime.now()).split('.')[0].replace(':', '-')
@@ -131,7 +131,7 @@ class FixedCycleTrafficAgent(TrafficAgent):
     min_green: int,
     max_green: int
   ) -> None:
-    super().__init__(name, color, True, False, net_file, route_file, num_seconds - delta_time, delta_time, yellow_time, min_green, max_green)
+    super().__init__(name, color, True, False, net_file, route_file, num_seconds, delta_time, yellow_time, min_green, max_green)
 
   def _get_agent(self, _: SumoEnvironment) -> None:
     return None
@@ -163,38 +163,33 @@ class QLearningTrafficAgent(TrafficAgent):
     initial_epsilon: float = 1,
     min_epsilon: float = 0.005
   ) -> None:
-    super().__init__(name, color, False, False, net_file, route_file, num_seconds - delta_time, delta_time, yellow_time, min_green, max_green)
+    super().__init__(name, color, False, True, net_file, route_file, num_seconds, delta_time, yellow_time, min_green, max_green)
     self.alpha = alpha
     self.gamma = gamma
     self.initial_epsilon = initial_epsilon
     self.min_epsilon = min_epsilon
 
-  def _get_agent(self, env: SumoEnvironment) -> dict[str, QLAgent]:
-    initial_states = env.reset()
-    ql_agents = {
-      ts: QLAgent(
-        starting_state = env.encode(initial_states[ts], ts),
-        state_space = env.observation_space,
-        action_space = env.action_space,
-        alpha = self.alpha,
-        gamma = self.gamma,
-        exploration_strategy = EpsilonGreedy(
-          initial_epsilon = self.initial_epsilon,
-          min_epsilon = self.min_epsilon,
-          decay = 0.9
-        )
-      ) for ts in env.ts_ids
-    }
-    return ql_agents
+  def _get_agent(self, env: SumoEnvironment) -> QLAgent:
+    return QLAgent(
+      starting_state = env.encode(env.reset()[0], env.ts_ids[0]),
+      state_space = env.observation_space,
+      action_space = env.action_space,
+      alpha = self.alpha,
+      gamma = self.gamma,
+      exploration_strategy = EpsilonGreedy(
+        initial_epsilon = self.initial_epsilon,
+        min_epsilon = self.min_epsilon,
+        decay = 0.9
+      )
+    )
 
-  def _learn(self, env: SumoEnvironment, agent: dict[str, QLAgent], update_metrics: Callable[[dict[Metric, float]], None]):
-    done: dict[str, bool] = {'__all__': False}
-    while not done['__all__']:
-      actions = {ts: agent[ts].act() for ts in agent.keys()}
-      state, reward, done, _ = env.step(action = actions) # type: ignore
+  def _learn(self, env: SumoEnvironment, agent: QLAgent, update_metrics: Callable[[dict[Metric, float]], None]):
+    done = False
+    while not done:
+      action = agent.act()
+      state, reward, _, done, _ = env.step(action = action) # type: ignore
       update_metrics(env.metrics[-1])
-      for agent_id in agent.keys():
-        agent[agent_id].learn(next_state = env.encode(state[agent_id], agent_id), reward = reward[agent_id]) # type: ignore
+      agent.learn(next_state = env.encode(state, env.ts_ids[0]), reward = reward)
 
   def _save_model(self):
     pass
@@ -216,7 +211,7 @@ class DeepQLearningTrafficAgent(TrafficAgent):
     initial_epsilon: float = 1,
     min_epsilon: float = 0.005
   ) -> None:
-    super().__init__(name, color, False, True, net_file, route_file, num_seconds // delta_time, delta_time, yellow_time, min_green, max_green)
+    super().__init__(name, color, False, True, net_file, route_file, (num_seconds + delta_time) // delta_time, delta_time, yellow_time, min_green, max_green)
     self.alpha = alpha
     self.gamma = gamma
     self.initial_epsilon = initial_epsilon

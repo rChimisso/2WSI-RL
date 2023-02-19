@@ -27,13 +27,12 @@ class AgentPlotData(TypedDict):
 class Canvas():
   def __init__(
     self,
-    x_lim: float,
     metrics: list[Metric],
     plots_per_row: int = default_plots_per_row,
     dpi: int = default_dpi
   ) -> None:
     plots_per_col = len(metrics) // plots_per_row + len(metrics) % plots_per_row
-    self._figure: pl.Figure = pl.figure(dpi = dpi, figsize = (min(max(x_lim / 10, 32), (2**16 - 1) / dpi), plots_per_col * 8))
+    self._figure: pl.Figure = pl.figure(dpi = dpi, figsize = (32, plots_per_col * 8))
     self._gridspec: pl.GridSpec = self.figure.add_gridspec(plots_per_col, plots_per_row * 2)
     self._metrics: dict[Metric, pl.Axes] = {metric: self._get_subplot(plots_per_row, index, metric) for index, metric in enumerate(metrics)}
 
@@ -89,10 +88,7 @@ class Plotter():
   ) -> None:
     self.color = color
     if (canvas is None):
-      if (x_lim is not None):
-        self.canvas = Canvas(x_lim, metrics, plots_per_row, dpi)
-      else:
-        raise ValueError('Either canvas or x_lim must be different from None')
+      self.canvas = Canvas(metrics, plots_per_row, dpi)
     else:
       self.canvas = canvas
     self.metrics: dict[Metric, list[float]] = {
@@ -133,12 +129,11 @@ class MultiPlotter():
     self,
     agents: list[AgentPlotData],
     metrics: list[Metric],
-    x_lim: float,
     plots_per_row: int = default_plots_per_row,
     dpi: int = default_dpi
   ) -> None:
     self.metrics = metrics
-    self.canvas = Canvas(x_lim, metrics, plots_per_row, dpi)
+    self.canvas = Canvas(metrics, plots_per_row, dpi)
     self.plotters: dict[str, Plotter] = {agent['name']: Plotter(agent['color'], metrics, plots_per_row, dpi, canvas = self.canvas) for agent in agents}
 
   def append(self, new_data: float, metric: Metric, agent: str) -> None:

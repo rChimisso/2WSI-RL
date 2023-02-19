@@ -9,8 +9,10 @@ pip3 install matplotlib
 pip3 install git+https://github.com/DLR-RM/stable-baselines3@feat/gymnasium-support
 
 - Gestione parametri extra ql e dql
-- Creazione situazione di traffico (.net.xml con la rete stradale e .rou.xml con il traffico)
+- Salvataggio modelli
+- Multiple run, plotting di grafici e valori medi (run con iperparametri diversi?)
 - Comprensione grafici
-- Pulizia codice
+- Creazione situazione di traffico (.net.xml con la rete stradale e .rou.xml con il traffico)
+- Pulizia codice (anche commentare)
 - Scrittura relazione (GDocs)
 - Trascrizione relazione (readme)
