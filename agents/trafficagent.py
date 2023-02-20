@@ -6,7 +6,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Union, Literal, Callable, Generic, TypeVar
 from abc import ABC, abstractmethod
-from utils.plotter import Plotter, Metric
+from utils.plotter import Plotter, PlotData, Metric
 from stable_baselines3.dqn.dqn import DQN
 if 'SUMO_HOME' in os.environ:
   tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -16,6 +16,18 @@ else:
 from sumo_rl import SumoEnvironment
 from sumo_rl.agents import QLAgent
 from sumo_rl.exploration import EpsilonGreedy
+
+default_metrics: list[Metric] = [
+  'system_total_stopped',
+  'system_total_waiting_time',
+  'system_mean_waiting_time',
+  'system_mean_speed',
+  't_stopped',
+  't_accumulated_waiting_time',
+  't_average_speed',
+  'agents_total_stopped',
+  'agents_total_accumulated_waiting_time'
+]
 
 class QLAgentEncoder(json.JSONEncoder):
   def default(self, o):
@@ -58,7 +70,8 @@ class TrafficAgent(ABC, Generic[A]):
     delta_time: int,
     yellow_time: int,
     min_green: int,
-    max_green: int
+    max_green: int,
+    plot_data: PlotData = PlotData(default_metrics)
   ) -> None:
     self.time = '-'
     self.name = name
@@ -71,18 +84,12 @@ class TrafficAgent(ABC, Generic[A]):
     self.yellow_time = yellow_time
     self.min_green = min_green
     self.max_green = max_green
-    self.plotter = Plotter(color, ['system_total_stopped', 'system_total_waiting_time', 'system_mean_waiting_time', 'system_mean_speed', 't_stopped', 't_accumulated_waiting_time', 't_average_speed', 'agents_total_stopped', 'agents_total_accumulated_waiting_time'])
+    self.plotter = Plotter(color, plot_data)
 
   def _get_file_name(self, type: Literal['csv', 'save']) -> str:
     return f'outputs/{self.name}/{type}s/{self.time},seconds={self.seconds},delta_time={self.delta_time},yellow_time={self.yellow_time},min_green={self.min_green},max_green={self.max_green}'
 
-  def _get_env(
-    self,
-    out_csv_name: str,
-    use_gui: bool,
-    add_system_info: bool,
-    add_per_agent_info: bool
-  ) -> SumoEnvironment:
+  def _get_env(self, out_csv_name: str, use_gui: bool) -> SumoEnvironment:
     return SumoEnvironment(
       net_file = self.net,
       route_file = self.rou,
@@ -93,8 +100,6 @@ class TrafficAgent(ABC, Generic[A]):
       yellow_time = self.yellow_time,
       min_green = self.min_green,
       max_green = self.max_green,
-      add_system_info = add_system_info,
-      add_per_agent_info = add_per_agent_info,
       fixed_ts = self.fixed,
       single_agent = True
     )
@@ -129,13 +134,11 @@ class TrafficAgent(ABC, Generic[A]):
   def run(
     self,
     update_metrics: Callable[[float, Metric, str], None],
-    add_system_info: bool = True,
-    add_per_agent_info: bool = True,
     use_gui: bool = False,
     load_path: Union[str, None] = None
   ) -> None:
     self.time = str(datetime.now()).split('.')[0].replace(':', '-')
-    env = self._get_env(self._get_file_name('csv'), use_gui, add_system_info, add_per_agent_info)
+    env = self._get_env(self._get_file_name('csv'), use_gui)
     agent = self._get_agent(env) if load_path is None else self._load_model(env, load_path)
     self._run(env, agent, lambda info: self._update_metrics(info, update_metrics), load_path is None)
     if load_path is None:
@@ -155,9 +158,10 @@ class FixedCycleTrafficAgent(TrafficAgent[None]):
     delta_time: int,
     yellow_time: int,
     min_green: int,
-    max_green: int
+    max_green: int,
+    plot_data: PlotData = PlotData(default_metrics)
   ) -> None:
-    super().__init__(name, color, True, net, rou, seconds, delta_time, yellow_time, min_green, max_green)
+    super().__init__(name, color, True, net, rou, seconds, delta_time, yellow_time, min_green, max_green, plot_data)
 
   def _get_agent(self, env: SumoEnvironment) -> None:
     return None
@@ -199,9 +203,10 @@ class LearningTrafficAgent(TrafficAgent[A], ABC, Generic[A]):
     gamma: float,
     init_eps: float,
     min_eps: float,
-    decay: float
+    decay: float,
+    plot_data: PlotData = PlotData(default_metrics)
   ) -> None:
-    super().__init__(name, color, False, net, rou, seconds, delta_time, yellow_time, min_green, max_green)
+    super().__init__(name, color, False, net, rou, seconds, delta_time, yellow_time, min_green, max_green, plot_data)
     self.alpha = alpha
     self.gamma = gamma
     self.init_eps = init_eps
@@ -227,9 +232,10 @@ class QLearningTrafficAgent(LearningTrafficAgent[QLAgent]):
     gamma: float,
     init_eps: float,
     min_eps: float,
-    decay: float
+    decay: float,
+    plot_data: PlotData = PlotData(default_metrics)
   ) -> None:
-    super().__init__(name, color, net, rou, seconds, delta_time, yellow_time, min_green, max_green, alpha, gamma, init_eps, min_eps, decay)
+    super().__init__(name, color, net, rou, seconds, delta_time, yellow_time, min_green, max_green, alpha, gamma, init_eps, min_eps, decay, plot_data)
 
   def _get_agent(self, env: SumoEnvironment) -> QLAgent:
     return QLAgent(
@@ -286,9 +292,10 @@ class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
     gamma: float,
     init_eps: float,
     min_eps: float,
-    decay_time: float
+    decay_time: float,
+    plot_data: PlotData = PlotData(default_metrics)
   ) -> None:
-    super().__init__(name, color, net, rou, (seconds + delta_time) // delta_time, delta_time, yellow_time, min_green, max_green, alpha, gamma, init_eps, min_eps, decay_time)
+    super().__init__(name, color, net, rou, (seconds + delta_time) // delta_time, delta_time, yellow_time, min_green, max_green, alpha, gamma, init_eps, min_eps, decay_time, plot_data)
 
   def _get_agent(self, env: SumoEnvironment) -> DQN:
     return DQN(

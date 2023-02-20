@@ -19,21 +19,23 @@ Metric = Literal[
   'agents_total_accumulated_waiting_time'
 ]
 
+class PlotData():
+  def __init__(self, metrics: list[Metric], plots_per_row: int = default_plots_per_row, dpi: int = default_dpi) -> None:
+    self.metrics = metrics
+    self.plots_per_row = plots_per_row
+    self.dpi = dpi
+
+
 class AgentPlotData(TypedDict):
   name: str
   color: str
 
 class Canvas():
-  def __init__(
-    self,
-    metrics: list[Metric],
-    plots_per_row: int = default_plots_per_row,
-    dpi: int = default_dpi
-  ) -> None:
-    plots_per_col = len(metrics) // plots_per_row + len(metrics) % plots_per_row
-    self._figure: pl.Figure = pl.figure(dpi = dpi, figsize = (32, plots_per_col * 8))
-    self._gridspec: pl.GridSpec = self.figure.add_gridspec(plots_per_col, plots_per_row * 2)
-    self._metrics: dict[Metric, pl.Axes] = {metric: self._get_subplot(plots_per_row, index, metric) for index, metric in enumerate(metrics)}
+  def __init__(self, plot_data: PlotData) -> None:
+    plots_per_col = len(plot_data.metrics) // plot_data.plots_per_row + len(plot_data.metrics) % plot_data.plots_per_row
+    self._figure: pl.Figure = pl.figure(dpi = plot_data.dpi, figsize = (32, plots_per_col * 8))
+    self._gridspec: pl.GridSpec = self.figure.add_gridspec(plots_per_col, plot_data.plots_per_row * 2)
+    self._metrics: dict[Metric, pl.Axes] = {metric: self._get_subplot(plot_data.plots_per_row, index, metric) for index, metric in enumerate(plot_data.metrics)}
 
   def _get_subplot(self, plots_per_row: int, current_index: int, plot_name: str) -> pl.Axes:
     col_index = current_index % plots_per_row * 2
@@ -79,29 +81,17 @@ class Plotter():
   def __init__(
     self,
     color: str,
-    metrics: list[Metric],
-    plots_per_row: int = default_plots_per_row,
-    dpi: int = default_dpi,
+    plot_data: PlotData,
     canvas: Union[Canvas, None] = None
   ) -> None:
     self.color = color
     if canvas is None:
-      self.canvas = Canvas(metrics, plots_per_row, dpi)
+      self.canvas = Canvas(plot_data)
     else:
       self.canvas = canvas
     self.metrics: dict[Metric, list[float]] = {
-      metric: [] for metric in metrics
+      metric: [] for metric in plot_data.metrics
     }
-
-  def _get_subplot(self, plots_per_row: int, current_index: int, plot_name: str) -> pl.Axes:
-    col_index = current_index % plots_per_row * 2
-    return self._init_plot(self.canvas.figure.add_subplot(self.canvas.gridspec[current_index // plots_per_row, col_index:(col_index + 2)]), plot_name)
-
-  def _init_plot(self, plot: pl.Axes, name: str) -> pl.Axes:
-    plot.set_title(f'{name} over time')
-    plot.set_xlabel('step')
-    plot.set_ylabel(name)
-    return plot
 
   def append(self, new_data: float, metric: Metric) -> None:
     if metric in self.metrics:
@@ -126,13 +116,11 @@ class MultiPlotter():
   def __init__(
     self,
     agents: list[AgentPlotData],
-    metrics: list[Metric],
-    plots_per_row: int = default_plots_per_row,
-    dpi: int = default_dpi
+    plot_data: PlotData
   ) -> None:
-    self.metrics = metrics
-    self.canvas = Canvas(metrics, plots_per_row, dpi)
-    self.plotters: dict[str, Plotter] = {agent['name']: Plotter(agent['color'], metrics, plots_per_row, dpi, canvas = self.canvas) for agent in agents}
+    self.metrics = plot_data.metrics
+    self.canvas = Canvas(plot_data)
+    self.plotters: dict[str, Plotter] = {agent['name']: Plotter(agent['color'], plot_data, self.canvas) for agent in agents}
 
   def append(self, new_data: float, metric: Metric, agent: str) -> None:
     if agent in self.plotters:
