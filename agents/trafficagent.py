@@ -4,7 +4,7 @@ import json
 import numpy
 from pathlib import Path
 from datetime import datetime
-from typing import Literal, Callable, Generic, TypeVar
+from typing import Union, Literal, Callable, Generic, TypeVar
 from abc import ABC, abstractmethod
 from utils.plotter import Plotter, Metric
 from stable_baselines3.dqn.dqn import DQN
@@ -109,7 +109,7 @@ class TrafficAgent(ABC, Generic[A]):
       callback(info[metric], metric, self.name)
 
   @abstractmethod
-  def _learn(self, env: SumoEnvironment, agent: A, update_metrics: Callable[[dict[Metric, float]], None]) -> None:
+  def _run(self, env: SumoEnvironment, agent: A, update_metrics: Callable[[dict[Metric, float]], None], learn: bool) -> None:
     raise NotImplementedError()
   
   @abstractmethod
@@ -126,37 +126,20 @@ class TrafficAgent(ABC, Generic[A]):
   def _load_model(self, env: SumoEnvironment, path: str) -> A:
     raise NotImplementedError()
 
-  @abstractmethod
-  def _run(self, env: SumoEnvironment, agent: A, update_metrics: Callable[[dict[Metric, float]], None]) -> None:
-    raise NotImplementedError()
-
-  def learn(
+  def run(
     self,
     update_metrics: Callable[[float, Metric, str], None],
     add_system_info: bool = True,
     add_per_agent_info: bool = True,
-    use_gui: bool = False
+    use_gui: bool = False,
+    load_path: Union[str, None] = None
   ) -> None:
     self.time = str(datetime.now()).split('.')[0].replace(':', '-')
     env = self._get_env(self._get_file_name('csv'), use_gui, add_system_info, add_per_agent_info)
-    agent = self._get_agent(env)
-    self._learn(env, agent, lambda info: self._update_metrics(info, update_metrics))
-    self._save_model(agent)
-    self._save_csv(env)
-    self._save_plots()
-    env.close()
-
-  def run(
-    self,
-    path: str,
-    update_metrics: Callable[[float, Metric, str], None],
-    add_system_info: bool = True,
-    add_per_agent_info: bool = True,
-    use_gui: bool = False
-  ) -> None:
-    env = self._get_env(self._get_file_name('csv'), use_gui, add_system_info, add_per_agent_info)
-    agent = self._load_model(env, path)
-    self._run(env, agent, lambda info: self._update_metrics(info, update_metrics))
+    agent = self._get_agent(env) if load_path is None else self._load_model(env, load_path)
+    self._run(env, agent, lambda info: self._update_metrics(info, update_metrics), load_path is None)
+    if load_path is None:
+      self._save_model(agent)
     self._save_csv(env)
     self._save_plots()
     env.close()
@@ -176,10 +159,10 @@ class FixedCycleTrafficAgent(TrafficAgent[None]):
   ) -> None:
     super().__init__(name, color, True, net, rou, seconds, delta_time, yellow_time, min_green, max_green)
 
-  def _get_agent(self, _: SumoEnvironment) -> None:
+  def _get_agent(self, env: SumoEnvironment) -> None:
     return None
 
-  def _learn(self, env: SumoEnvironment, _, update_metrics: Callable[[dict[Metric, float]], None]):
+  def _run(self, env: SumoEnvironment, agent: None, update_metrics: Callable[[dict[Metric, float]], None], learn: bool):
     env.reset()
     done = False
     while not done:
@@ -194,10 +177,10 @@ class FixedCycleTrafficAgent(TrafficAgent[None]):
     env._compute_info()
     return env._compute_dones()['__all__']
 
-  def _save_model(self, _: None):
+  def _save_model(self, agent: None):
     pass
 
-  def _load_model(self, env: SumoEnvironment, _: str) -> None:
+  def _load_model(self, env: SumoEnvironment, path: str) -> None:
     return None
 
 class LearningTrafficAgent(TrafficAgent[A], ABC, Generic[A]):
@@ -258,20 +241,14 @@ class QLearningTrafficAgent(LearningTrafficAgent[QLAgent]):
       exploration_strategy = EpsilonGreedy(self.init_eps, self.min_eps, self.decay)
     )
 
-  def _learn(self, env: SumoEnvironment, agent: QLAgent, update_metrics: Callable[[dict[Metric, float]], None]):
+  def _run(self, env: SumoEnvironment, agent: QLAgent, update_metrics: Callable[[dict[Metric, float]], None], learn: bool):
     done = False
     while not done:
       action = agent.act()
       state, reward, _, done, _ = env.step(action = action) # type: ignore
       update_metrics(env.metrics[-1])
-      agent.learn(next_state = env.encode(state, env.ts_ids[0]), reward = reward)
-
-  def _run(self, env: SumoEnvironment, agent: QLAgent, update_metrics: Callable[[dict[Metric, float]], None]):
-    done = False
-    while not done:
-      action = agent.act()
-      _, _, _, done, _ = env.step(action = action) # type: ignore
-      update_metrics(env.metrics[-1])
+      if learn:
+        agent.learn(next_state = env.encode(state, env.ts_ids[0]), reward = reward)
 
   def _save_model(self, agent: QLAgent):
     path = '{}.json'.format(self._get_file_name('save'))
@@ -329,8 +306,15 @@ class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
       verbose = 1
     )
 
-  def _learn(self, _: SumoEnvironment, agent: DQN, update_metrics: Callable[[dict[Metric, float]], None]):
-    agent.learn(total_timesteps = self.seconds, callback = lambda locals, _: update_metrics(locals['infos'][0]))
+  def _run(self, env: SumoEnvironment, agent: DQN, update_metrics: Callable[[dict[Metric, float]], None], learn: bool):
+    if learn:
+      agent.learn(total_timesteps = self.seconds, callback = lambda locals, _: update_metrics(locals['infos'][0]))
+    else:
+      # agent.predict()
+      pass # TODO
 
   def _save_model(self, _: SumoEnvironment, agent: DQN):
     agent.save('{}.zip'.format(self._get_file_name('save')))
+
+  def _load_model(self, env: SumoEnvironment, path: str) -> DQN:
+    return DQN.load(env = env, path = path)
