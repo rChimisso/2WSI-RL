@@ -7,12 +7,8 @@ from datetime import datetime
 from typing import Union, Literal, Callable, Generic, TypeVar
 from abc import ABC, abstractmethod
 from utils.plotter import Plotter, PlotData, Metric
+from agents.environments import TrafficEnvironment
 from stable_baselines3.dqn.dqn import DQN
-if 'SUMO_HOME' in os.environ:
-  tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-  sys.path.append(tools)
-else:
-  sys.exit("Please declare the environment variable 'SUMO_HOME'")
 from sumo_rl import SumoEnvironment
 from sumo_rl.agents import QLAgent
 from sumo_rl.exploration import EpsilonGreedy
@@ -64,45 +60,18 @@ class TrafficAgent(ABC, Generic[A]):
     name: str,
     color: str,
     fixed: bool,
-    net: str,
-    rou: str,
-    seconds: int,
-    delta_time: int,
-    yellow_time: int,
-    min_green: int,
-    max_green: int,
+    traffic_env: TrafficEnvironment,
     plot_data: PlotData = PlotData(default_metrics)
   ) -> None:
     self.time = '-'
     self.name = name
     self.color = color
     self.fixed = fixed
-    self.net = net
-    self.rou = rou
-    self.seconds = seconds
-    self.delta_time = delta_time
-    self.yellow_time = yellow_time
-    self.min_green = min_green
-    self.max_green = max_green
+    self.traffic_env = traffic_env
     self.plotter = Plotter(color, plot_data)
 
   def _get_file_name(self, type: Literal['csv', 'save']) -> str:
-    return f'outputs/{self.name}/{type}s/{self.time},seconds={self.seconds},delta_time={self.delta_time},yellow_time={self.yellow_time},min_green={self.min_green},max_green={self.max_green}'
-
-  def _get_env(self, out_csv_name: str, use_gui: bool) -> SumoEnvironment:
-    return SumoEnvironment(
-      net_file = self.net,
-      route_file = self.rou,
-      out_csv_name = out_csv_name,
-      use_gui = use_gui,
-      num_seconds = self.seconds,
-      delta_time = self.delta_time,
-      yellow_time = self.yellow_time,
-      min_green = self.min_green,
-      max_green = self.max_green,
-      fixed_ts = self.fixed,
-      single_agent = True
-    )
+    return f'outputs/{self.name}/{type}s/{self.time},seconds={self.traffic_env.seconds},delta_time={self.traffic_env.delta_time},yellow_time={self.traffic_env.yellow_time},min_green={self.traffic_env.min_green},max_green={self.traffic_env.max_green}'
   
   @abstractmethod
   def _get_agent(self, env: SumoEnvironment):
@@ -138,7 +107,7 @@ class TrafficAgent(ABC, Generic[A]):
     load_path: Union[str, None] = None
   ) -> None:
     self.time = str(datetime.now()).split('.')[0].replace(':', '-')
-    env = self._get_env(self._get_file_name('csv'), use_gui)
+    env = self.traffic_env.get_sumo_env(self.fixed, self._get_file_name('csv'), use_gui)
     agent = self._get_agent(env) if load_path is None else self._load_model(env, load_path)
     self._run(env, agent, lambda info: self._update_metrics(info, update_metrics), load_path is None)
     if load_path is None:
@@ -152,16 +121,10 @@ class FixedCycleTrafficAgent(TrafficAgent[None]):
     self,
     name: str,
     color: str,
-    net: str,
-    rou: str,
-    seconds: int,
-    delta_time: int,
-    yellow_time: int,
-    min_green: int,
-    max_green: int,
+    traffic_env: TrafficEnvironment,
     plot_data: PlotData = PlotData(default_metrics)
   ) -> None:
-    super().__init__(name, color, True, net, rou, seconds, delta_time, yellow_time, min_green, max_green, plot_data)
+    super().__init__(name, color, True, traffic_env, plot_data)
 
   def _get_agent(self, env: SumoEnvironment) -> None:
     return None
@@ -174,7 +137,7 @@ class FixedCycleTrafficAgent(TrafficAgent[None]):
       update_metrics(env.metrics[-1])
 
   def _step(self, env: SumoEnvironment):
-    for _ in range(self.delta_time):
+    for _ in range(self.traffic_env.delta_time):
       env._sumo_step()
     env._compute_observations()
     env._compute_rewards()
@@ -192,13 +155,7 @@ class LearningTrafficAgent(TrafficAgent[A], ABC, Generic[A]):
     self,
     name: str,
     color: str,
-    net: str,
-    rou: str,
-    seconds: int,
-    delta_time: int,
-    yellow_time: int,
-    min_green: int,
-    max_green: int,
+    traffic_env: TrafficEnvironment,
     alpha: float,
     gamma: float,
     init_eps: float,
@@ -206,7 +163,7 @@ class LearningTrafficAgent(TrafficAgent[A], ABC, Generic[A]):
     decay: float,
     plot_data: PlotData = PlotData(default_metrics)
   ) -> None:
-    super().__init__(name, color, False, net, rou, seconds, delta_time, yellow_time, min_green, max_green, plot_data)
+    super().__init__(name, color, False, traffic_env, plot_data)
     self.alpha = alpha
     self.gamma = gamma
     self.init_eps = init_eps
@@ -221,13 +178,7 @@ class QLearningTrafficAgent(LearningTrafficAgent[QLAgent]):
     self,
     name: str,
     color: str,
-    net: str,
-    rou: str,
-    seconds: int,
-    delta_time: int,
-    yellow_time: int,
-    min_green: int,
-    max_green: int,
+    traffic_env: TrafficEnvironment,
     alpha: float,
     gamma: float,
     init_eps: float,
@@ -235,7 +186,7 @@ class QLearningTrafficAgent(LearningTrafficAgent[QLAgent]):
     decay: float,
     plot_data: PlotData = PlotData(default_metrics)
   ) -> None:
-    super().__init__(name, color, net, rou, seconds, delta_time, yellow_time, min_green, max_green, alpha, gamma, init_eps, min_eps, decay, plot_data)
+    super().__init__(name, color, traffic_env, alpha, gamma, init_eps, min_eps, decay, plot_data)
 
   def _get_agent(self, env: SumoEnvironment) -> QLAgent:
     return QLAgent(
@@ -281,13 +232,7 @@ class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
     self,
     name: str,
     color: str,
-    net: str,
-    rou: str,
-    seconds: int,
-    delta_time: int,
-    yellow_time: int,
-    min_green: int,
-    max_green: int,
+    traffic_env: TrafficEnvironment,
     alpha: float,
     gamma: float,
     init_eps: float,
@@ -295,7 +240,7 @@ class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
     decay_time: float,
     plot_data: PlotData = PlotData(default_metrics)
   ) -> None:
-    super().__init__(name, color, net, rou, (seconds + delta_time) // delta_time, delta_time, yellow_time, min_green, max_green, alpha, gamma, init_eps, min_eps, decay_time, plot_data)
+    super().__init__(name, color, traffic_env, alpha, gamma, init_eps, min_eps, decay_time, plot_data)
 
   def _get_agent(self, env: SumoEnvironment) -> DQN:
     return DQN(
@@ -303,10 +248,13 @@ class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
       env = env,
       learning_rate = self.alpha,
       learning_starts = 0,
+      # batch_size = self.traffic_env.seconds,
       gamma = self.gamma,
-      train_freq = 1,
+      # train_freq = 1,
+      # train_freq = (1, 'episode'),
+      train_freq = self.traffic_env.delta_time,
       gradient_steps = -1,
-      target_update_interval = 500,
+      target_update_interval = self.traffic_env.seconds // 100, # Cambiato di recente
       exploration_fraction = self.decay,
       exploration_initial_eps = self.init_eps,
       exploration_final_eps = self.min_eps,
@@ -315,7 +263,8 @@ class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
 
   def _run(self, env: SumoEnvironment, agent: DQN, update_metrics: Callable[[dict[Metric, float]], None], learn: bool):
     if learn:
-      agent.learn(total_timesteps = self.seconds, callback = lambda locals, _: update_metrics(locals['infos'][0]))
+      # reset_num_timesteps default a True, False sembra non avere effetti
+      agent.learn(total_timesteps = self.traffic_env.seconds, reset_num_timesteps = True, callback = lambda locals, globals: update_metrics(locals['infos'][0]))
     else:
       done = False
       state = env.reset()[0]
@@ -323,7 +272,6 @@ class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
         action= agent.predict(state)[0]
         state, _, _, done, _ = env.step(action) # type: ignore
         update_metrics(env.metrics[-1])
-
 
   def _save_model(self, agent: DQN):
     agent.save('{}.zip'.format(self._get_file_name('save')))
