@@ -245,7 +245,7 @@ class QLearningTrafficAgent(LearningTrafficAgent[QLAgent]):
     done = False
     while not done:
       action = agent.act()
-      state, reward, _, done, _ = env.step(action = action) # type: ignore
+      state, reward, _, done, _ = env.step(action) # type: ignore
       update_metrics(env.metrics[-1])
       if learn:
         agent.learn(next_state = env.encode(state, env.ts_ids[0]), reward = reward)
@@ -310,10 +310,15 @@ class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
     if learn:
       agent.learn(total_timesteps = self.seconds, callback = lambda locals, _: update_metrics(locals['infos'][0]))
     else:
-      # agent.predict()
-      pass # TODO
+      done = False
+      state = env.reset()[0]
+      while not done:
+        action= agent.predict(state)[0]
+        state, _, _, done, _ = env.step(action) # type: ignore
+        update_metrics(env.metrics[-1])
 
-  def _save_model(self, _: SumoEnvironment, agent: DQN):
+
+  def _save_model(self, agent: DQN):
     agent.save('{}.zip'.format(self._get_file_name('save')))
 
   def _load_model(self, env: SumoEnvironment, path: str) -> DQN:
