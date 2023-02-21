@@ -11,12 +11,7 @@ Metric = Literal[
   'system_total_stopped',
   'system_total_waiting_time',
   'system_mean_waiting_time',
-  'system_mean_speed',
-  't_stopped',
-  't_accumulated_waiting_time',
-  't_average_speed',
-  'agents_total_stopped',
-  'agents_total_accumulated_waiting_time'
+  'system_mean_speed'
 ]
 
 class PlotData():
@@ -24,7 +19,6 @@ class PlotData():
     self.metrics = metrics
     self.plots_per_row = plots_per_row
     self.dpi = dpi
-
 
 class AgentPlotData(TypedDict):
   name: str

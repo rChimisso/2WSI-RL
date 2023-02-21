@@ -1,5 +1,3 @@
-import os
-import sys
 import json
 import numpy
 from pathlib import Path
@@ -7,8 +5,8 @@ from datetime import datetime
 from typing import Union, Literal, Callable, Generic, TypeVar
 from abc import ABC, abstractmethod
 from utils.plotter import Plotter, PlotData, Metric
-from agents.environments import TrafficEnvironment
-from stable_baselines3.dqn.dqn import DQN
+from traffic.environment import TrafficEnvironment
+from stable_baselines3 import DQN
 from sumo_rl import SumoEnvironment
 from sumo_rl.agents import QLAgent
 from sumo_rl.exploration import EpsilonGreedy
@@ -17,12 +15,7 @@ default_metrics: list[Metric] = [
   'system_total_stopped',
   'system_total_waiting_time',
   'system_mean_waiting_time',
-  'system_mean_speed',
-  't_stopped',
-  't_accumulated_waiting_time',
-  't_average_speed',
-  'agents_total_stopped',
-  'agents_total_accumulated_waiting_time'
+  'system_mean_speed'
 ]
 
 class QLAgentEncoder(json.JSONEncoder):
@@ -90,9 +83,6 @@ class TrafficAgent(ABC, Generic[A]):
   def _save_model(self, agent: A):
     raise NotImplementedError()
 
-  def _save_csv(self, env: SumoEnvironment) -> None:
-    env.save_csv(env.out_csv_name, 0)
-
   def _save_plots(self) -> None:
     self.plotter.save(self.name)
 
@@ -112,7 +102,6 @@ class TrafficAgent(ABC, Generic[A]):
     self._run(env, agent, lambda info: self._update_metrics(info, update_metrics), load_path is None)
     if load_path is None:
       self._save_model(agent)
-    self._save_csv(env)
     self._save_plots()
     env.close()
 
@@ -135,6 +124,7 @@ class FixedCycleTrafficAgent(TrafficAgent[None]):
     while not done:
       done = self._step(env)
       update_metrics(env.metrics[-1])
+    env.reset()
 
   def _step(self, env: SumoEnvironment):
     for _ in range(self.traffic_env.delta_time):
@@ -206,6 +196,7 @@ class QLearningTrafficAgent(LearningTrafficAgent[QLAgent]):
       update_metrics(env.metrics[-1])
       if learn:
         agent.learn(next_state = env.encode(state, env.ts_ids[0]), reward = reward)
+    env.reset()
 
   def _save_model(self, agent: QLAgent):
     path = '{}.json'.format(self._get_file_name('save'))
@@ -248,13 +239,10 @@ class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
       env = env,
       learning_rate = self.alpha,
       learning_starts = 0,
-      # batch_size = self.traffic_env.seconds,
       gamma = self.gamma,
-      # train_freq = 1,
-      # train_freq = (1, 'episode'),
-      train_freq = self.traffic_env.delta_time,
+      train_freq = (1, 'step'),
       gradient_steps = -1,
-      target_update_interval = self.traffic_env.seconds // 100, # Cambiato di recente
+      target_update_interval = max(1, self.traffic_env.seconds // 100),
       exploration_fraction = self.decay,
       exploration_initial_eps = self.init_eps,
       exploration_final_eps = self.min_eps,
@@ -263,15 +251,16 @@ class DeepQLearningTrafficAgent(LearningTrafficAgent[DQN]):
 
   def _run(self, env: SumoEnvironment, agent: DQN, update_metrics: Callable[[dict[Metric, float]], None], learn: bool):
     if learn:
-      # reset_num_timesteps default a True, False sembra non avere effetti
-      agent.learn(total_timesteps = self.traffic_env.seconds, reset_num_timesteps = True, callback = lambda locals, globals: update_metrics(locals['infos'][0]))
+      # total_timesteps needs to be divided by delta_time because DQN counts the actual seconds rather than the agent steps.
+      agent.learn(total_timesteps = self.traffic_env.seconds // self.traffic_env.delta_time, log_interval = 1, callback = lambda locals, globals: update_metrics(locals['infos'][0]))
     else:
       done = False
       state = env.reset()[0]
       while not done:
-        action= agent.predict(state)[0]
+        action = agent.predict(state)[0]
         state, _, _, done, _ = env.step(action) # type: ignore
         update_metrics(env.metrics[-1])
+      env.reset()
 
   def _save_model(self, agent: DQN):
     agent.save('{}.zip'.format(self._get_file_name('save')))
