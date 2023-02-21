@@ -15,13 +15,7 @@ Metric = Literal[
   # Arithmetic mean of all waiting times for each vehicle.
   'system_mean_waiting_time',
   # Arithmetic mean of the speed of each vehicle.
-  'system_mean_speed',
-  # 
-  't_accumulated_waiting_time',
-  # 
-  't_average_speed',
-  # 
-  'agents_total_accumulated_waiting_time'
+  'system_mean_speed'
 ]
 
 TITLES: dict[Metric, str] = {
@@ -29,9 +23,9 @@ TITLES: dict[Metric, str] = {
   'system_total_waiting_time': 'Total waiting time',
   'system_mean_waiting_time': 'Mean waiting time',
   'system_mean_speed': 'Mean speed',
-  't_accumulated_waiting_time': 't_accumulated_waiting_time',
-  't_average_speed': 't_average_speed',
-  'agents_total_accumulated_waiting_time': 'agents_total_accumulated_waiting_time'
+  # 't_accumulated_waiting_time': 't_accumulated_waiting_time',
+  # 't_average_speed': 't_average_speed',
+  # 'agents_total_accumulated_waiting_time': 'agents_total_accumulated_waiting_time'
 }
 
 class PlotData():
@@ -57,7 +51,7 @@ class Canvas():
 
   def _init_subplot(self, plot: pl.Axes, metric: Metric) -> pl.Axes:
     plot.set_title(f'{TITLES[metric]} over time')
-    plot.set_xlabel('step')
+    plot.set_xlabel('Step')
     plot.set_ylabel(TITLES[metric])
     return plot
 
@@ -89,7 +83,7 @@ class Canvas():
       bbox = Bbox.from_extents(bbox.x0 / dpi, bbox.y0 / dpi, bbox.xmax / dpi, bbox.ymax / dpi)
       subfolder = f'{folder}/' if folder is not None else ''
       Path(f'outputs/{subfolder}plots/').mkdir(parents = True, exist_ok = True)
-      self.figure.savefig(f'outputs/{subfolder}plots/{metric}_plot.png', bbox_inches = bbox.expanded(1.01, 1.01))
+      self.figure.savefig(f'outputs/{subfolder}plots/{TITLES[metric]} plot.png', bbox_inches = bbox.expanded(1.01, 1.01))
 
 class Plotter():
   def __init__(
