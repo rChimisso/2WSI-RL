@@ -27,7 +27,7 @@ class FixedSumoEnvironment(SumoEnvironment):
       max_green = max_green,
       fixed_ts = fixed_ts,
       single_agent = True,
-      add_per_agent_info = False
+      add_per_agent_info = True
     )
 
   def _compute_dones(self):

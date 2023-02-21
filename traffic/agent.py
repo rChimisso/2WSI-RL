@@ -15,7 +15,10 @@ default_metrics: list[Metric] = [
   'system_total_stopped',
   'system_total_waiting_time',
   'system_mean_waiting_time',
-  'system_mean_speed'
+  'system_mean_speed',
+  't_accumulated_waiting_time',
+  't_average_speed',
+  'agents_total_accumulated_waiting_time'
 ]
 
 class QLAgentEncoder(json.JSONEncoder):
@@ -83,9 +86,6 @@ class TrafficAgent(ABC, Generic[A]):
   def _save_model(self, agent: A):
     raise NotImplementedError()
 
-  def _save_plots(self) -> None:
-    self.plotter.save(self.name)
-
   @abstractmethod
   def _load_model(self, env: SumoEnvironment, path: str) -> A:
     raise NotImplementedError()
@@ -102,9 +102,10 @@ class TrafficAgent(ABC, Generic[A]):
     self._run(env, agent, lambda info: self._update_metrics(info, update_metrics), load_path is None)
     if load_path is None:
       self._save_model(agent)
-    self._save_plots()
+    self.plotter.save(self.name)
     env.close()
 
+# TODO: prevent agent from running and saving if learn = True ?
 class FixedCycleTrafficAgent(TrafficAgent[None]):
   def __init__(
     self,

@@ -8,11 +8,31 @@ default_plots_per_row: int = 1
 default_dpi: int = 100
 
 Metric = Literal[
+  # Total number of stationary (speed < 0.1) vehicles in the current step.
   'system_total_stopped',
+  # Sum of all waiting times for each vehicle. The waiting time of a vehicle is defined as the time (in seconds) spent with a speed below 0.1m/s since the last time it was faster than 0.1m/s. (basically, the waiting time of a vehicle is reset to 0 every time it moves).
   'system_total_waiting_time',
+  # Arithmetic mean of all waiting times for each vehicle.
   'system_mean_waiting_time',
-  'system_mean_speed'
+  # Arithmetic mean of the speed of each vehicle.
+  'system_mean_speed',
+  # 
+  't_accumulated_waiting_time',
+  # 
+  't_average_speed',
+  # 
+  'agents_total_accumulated_waiting_time'
 ]
+
+TITLES: dict[Metric, str] = {
+  'system_total_stopped': 'Number of stationary vehicles',
+  'system_total_waiting_time': 'Total waiting time',
+  'system_mean_waiting_time': 'Mean waiting time',
+  'system_mean_speed': 'Mean speed',
+  't_accumulated_waiting_time': 't_accumulated_waiting_time',
+  't_average_speed': 't_average_speed',
+  'agents_total_accumulated_waiting_time': 'agents_total_accumulated_waiting_time'
+}
 
 class PlotData():
   def __init__(self, metrics: list[Metric], plots_per_row: int = default_plots_per_row, dpi: int = default_dpi) -> None:
@@ -31,14 +51,14 @@ class Canvas():
     self._gridspec: pl.GridSpec = self.figure.add_gridspec(plots_per_col, plot_data.plots_per_row * 2)
     self._metrics: dict[Metric, pl.Axes] = {metric: self._get_subplot(plot_data.plots_per_row, index, metric) for index, metric in enumerate(plot_data.metrics)}
 
-  def _get_subplot(self, plots_per_row: int, current_index: int, plot_name: str) -> pl.Axes:
+  def _get_subplot(self, plots_per_row: int, current_index: int, metric: Metric) -> pl.Axes:
     col_index = current_index % plots_per_row * 2
-    return self._init_subplot(self.figure.add_subplot(self.gridspec[current_index // plots_per_row, col_index:(col_index + 2)]), plot_name)
+    return self._init_subplot(self.figure.add_subplot(self.gridspec[current_index // plots_per_row, col_index:(col_index + 2)]), metric)
 
-  def _init_subplot(self, plot: pl.Axes, name: str) -> pl.Axes:
-    plot.set_title(f'{name} over time')
+  def _init_subplot(self, plot: pl.Axes, metric: Metric) -> pl.Axes:
+    plot.set_title(f'{TITLES[metric]} over time')
     plot.set_xlabel('step')
-    plot.set_ylabel(name)
+    plot.set_ylabel(TITLES[metric])
     return plot
 
   @property
