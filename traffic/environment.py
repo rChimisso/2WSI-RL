@@ -2,8 +2,8 @@ from pathlib import Path
 from pandas import DataFrame
 from sumo_rl import SumoEnvironment
 
-class FixedSumoEnvironment(SumoEnvironment):
-  """ Same as SumoEnvironment, but overrides _compute_dones to fix https://github.com/LucasAlegre/sumo-rl/issues/132 and save_csv to change the filename standard. """
+class SumoEnvironmentWrapper(SumoEnvironment):
+  """ Wrapper for a SumoEnvironment, overrides save_csv to change the filename standard. """
 
   def __init__(
     self,
@@ -19,7 +19,7 @@ class FixedSumoEnvironment(SumoEnvironment):
     fixed_ts: bool
   ) -> None:
     """
-    Same as SumoEnvironment, but overrides _compute_dones to fix https://github.com/LucasAlegre/sumo-rl/issues/132 and save_csv to change the filename standard.
+    Wrapper for a SumoEnvironment, overrides save_csv to change the filename standard.
 
     :param net_file: (str) Path to the net_file.
     :param route_file: (str) Path to the route_file.
@@ -47,12 +47,6 @@ class FixedSumoEnvironment(SumoEnvironment):
       single_agent = True,
       add_per_agent_info = True
     )
-
-  def _compute_dones(self):
-    """ Returns the dones for each agent, overridden to fix https://github.com/LucasAlegre/sumo-rl/issues/132 """
-    dones = {ts_id: False for ts_id in self.ts_ids}
-    dones['__all__'] = self.sim_step >= self.sim_max_time # type: ignore
-    return dones
 
   def save_csv(self, out_csv_name: str, run: int):
     """
@@ -120,6 +114,14 @@ class TrafficEnvironment():
     """ Max green time in a phase. """
     return self._max_green
 
+  def set_seconds(self, seconds: int) -> None:
+    """
+    Sets the simulation seconds.
+
+    :param seconds: (int) New amount of simulation seconds.
+    """
+    self._seconds = seconds
+
   def get_sumo_env(self, fixed: bool, out_csv_name: str, use_gui: bool) -> SumoEnvironment:
     """
     Returns a new SumoEnvironment.
@@ -128,7 +130,7 @@ class TrafficEnvironment():
     :param out_csv_name: (str) filepath to save csv data.
     :param use_gui: (bool) Whether to show SUMO GUI while running (if True, will slow down the run).
     """
-    return FixedSumoEnvironment(
+    return SumoEnvironmentWrapper(
       net_file = self._net,
       route_file = self._rou,
       out_csv_name = out_csv_name,

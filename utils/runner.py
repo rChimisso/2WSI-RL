@@ -1,3 +1,4 @@
+from typing import Union
 from typing_extensions import Type, TypedDict
 from traffic.environment import TrafficEnvironment
 from traffic.agent import TrafficAgent
@@ -51,13 +52,16 @@ class Runner():
     self._multi_plotter.save()
     return models
 
-  def run(self, models: dict[str, list[str]], use_gui: bool = True):
+  def run(self, models: dict[str, list[str]], seconds: Union[int, None] = None, use_gui: bool = True):
     """ 
     Resets the hyperparameters configuration for all TrafficAgents, then runs all specified TrafficAgents loading each specified model for each run.
     
-    :param models: (dict[str, list[str]]) 
-    :param use_gui: (bool) 
+    :param models: (dict[str, list[str]]) Dictionary of agent names paired with a list of models to load.
+    :param seconds: (Union[int, None]) Amount of simulation seconds to run, if None the same amount of simulation seconds used during learning will be used.
+    :param use_gui: (bool) Whether to show SUMO GUI.
     """
+    if seconds is not None:
+      self._traffic_env.set_seconds(seconds)
     for agent in self._agents:
       self._agents[agent]['agent'].set_config({})
       if agent in models:
