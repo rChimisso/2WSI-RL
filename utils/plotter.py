@@ -1,7 +1,6 @@
 from typing import TypedDict, Literal, Union
-import pylab as pl
+from pylab import Figure, GridSpec, Axes, figure
 from matplotlib.transforms import Bbox
-# from matplotlib.colors 
 from pathlib import Path
 
 default_plots_per_row: int = 1
@@ -41,38 +40,38 @@ class AgentPlotData(TypedDict):
 class Canvas():
   def __init__(self, plot_data: PlotData) -> None:
     plots_per_col = len(plot_data.metrics) // plot_data.plots_per_row + len(plot_data.metrics) % plot_data.plots_per_row
-    self._figure: pl.Figure = pl.figure(dpi = plot_data.dpi, figsize = (32, plots_per_col * 8))
-    self._gridspec: pl.GridSpec = self.figure.add_gridspec(plots_per_col, plot_data.plots_per_row * 2)
-    self._metrics: dict[Metric, pl.Axes] = {metric: self._get_subplot(plot_data.plots_per_row, index, metric) for index, metric in enumerate(plot_data.metrics)}
+    self._figure: Figure = figure(dpi = plot_data.dpi, figsize = (32, plots_per_col * 8))
+    self._gridspec: GridSpec = self.figure.add_gridspec(plots_per_col, plot_data.plots_per_row * 2)
+    self._metrics: dict[Metric, Axes] = {metric: self._get_subplot(plot_data.plots_per_row, index, metric) for index, metric in enumerate(plot_data.metrics)}
 
-  def _get_subplot(self, plots_per_row: int, current_index: int, metric: Metric) -> pl.Axes:
+  def _get_subplot(self, plots_per_row: int, current_index: int, metric: Metric) -> Axes:
     col_index = current_index % plots_per_row * 2
     return self._init_subplot(self.figure.add_subplot(self.gridspec[current_index // plots_per_row, col_index:(col_index + 2)]), metric)
 
-  def _init_subplot(self, plot: pl.Axes, metric: Metric) -> pl.Axes:
+  def _init_subplot(self, plot: Axes, metric: Metric) -> Axes:
     plot.set_title(f'{TITLES[metric]} over time')
     plot.set_xlabel('Step')
     plot.set_ylabel(TITLES[metric])
     return plot
 
   @property
-  def figure(self) -> pl.Figure:
+  def figure(self) -> Figure:
     return self._figure
   
   @property
-  def gridspec(self) -> pl.GridSpec:
+  def gridspec(self) -> GridSpec:
     return self._gridspec
 
   @property
   def renderer(self):
     return self._figure.canvas.get_renderer()
 
-  def get_plot(self, metric: Metric) -> Union[pl.Axes, None]:
+  def get_plot(self, metric: Metric) -> Union[Axes, None]:
     if metric in self._metrics:
       return self._metrics[metric]
     return None
 
-  def get_plots(self) -> dict[Metric, Union[pl.Axes, None]]:
+  def get_plots(self) -> dict[Metric, Union[Axes, None]]:
     return {metric: self.get_plot(metric) for metric in self._metrics}
 
   def save(self, metric: Metric, folder: Union[str, None] = None) -> None:
