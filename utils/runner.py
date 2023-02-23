@@ -10,7 +10,7 @@ class RunsConfig(TypedDict):
   cls: type[TrafficAgent]
   """ Class of the TrafficAgent to use for all training runs. """
   configs: list[Union[TrafficAgentConfig, LearningAgentConfig]]
-  """ List of AgentConfigs to use to configure the TrafficAgent at each training run. """
+  """ List of configs to use to configure the TrafficAgent at each training run. """
 
 class RunnerAgent(TypedDict):
   """ TypedDict for a TrafficAgent and its hyperparameters configurations. """
