@@ -1,70 +1,69 @@
 from typing import Union
-from typing_extensions import Type, TypedDict
+from typing_extensions import TypedDict
 from traffic.environment import TrafficEnvironment
 from traffic.agent import TrafficAgent
-from utils.configs import AgentConfig
-from utils.plotter import PlotData, MultiPlotter
+from utils.configs import TrafficAgentConfig, LearningAgentConfig, CanvasConfig
+from utils.plotter import MultiPlotter
 
-class AgentRuns(TypedDict):
+class RunsConfig(TypedDict):
   """ TypedDict for one or more training runs of a TrafficAgent. """
-  cls: Type[TrafficAgent]
+  cls: type[TrafficAgent]
   """ Class of the TrafficAgent to use for all training runs. """
-  color: str
-  """ Color for the plotted lines of all training runs. """
-  configs: list[AgentConfig]
+  configs: list[Union[TrafficAgentConfig, LearningAgentConfig]]
   """ List of AgentConfigs to use to configure the TrafficAgent at each training run. """
 
 class RunnerAgent(TypedDict):
   """ TypedDict for a TrafficAgent and its hyperparameters configurations. """
   agent: TrafficAgent
   """ TrafficAgent to run """
-  configs: list[AgentConfig]
+  configs: list[Union[TrafficAgentConfig, LearningAgentConfig]]
   """ Hyperparameters configurations for each run. """
 
 class Runner():
   """ Runner for several TrafficAgents with possibly different hyperparameters configuration and  """
 
-  def __init__(self, plot_data: PlotData, traffic_env: TrafficEnvironment, agents: dict[str, AgentRuns]) -> None:
+  def __init__(self, canvas_config: CanvasConfig, traffic_env: TrafficEnvironment, runs_configs: list[RunsConfig]) -> None:
     """
-    :param plot_data: (PlotData) PlotData to instantiate Plotters.
+    :param canvas_config: (CanvasConfig) PlotData to instantiate Plotters.
     :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform each run in.
-    :param agents: (dict[str, AgentRuns]) Dictionary of agents names along with their runs configurations.
+    :param agents: (list[RunsConfig]) Dictionary of agents names along with their runs configurations.
     """
     self._traffic_env: TrafficEnvironment = traffic_env
-    self._agents: dict[str, RunnerAgent] = {
-      agent: {
-        'agent': agents[agent]['cls'](agent, agents[agent]['color'], traffic_env, plot_data),
-        'configs': agents[agent]['configs']
-      } for agent in agents
-    }
-    self._multi_plotter: MultiPlotter = MultiPlotter(list(map(lambda agent: {'name': agent, 'color': agents[agent]['color']}, list(agents))), plot_data)
+    self._agents: dict[str, TrafficAgent] = {config['name']: agent['cls'](config, traffic_env, canvas_config) for agent in runs_configs for config in agent['configs']}
+    self._multi_plotter: MultiPlotter = MultiPlotter([agent.config for agent in self._agents.values()], canvas_config)
 
   def learn(self) -> dict[str, list[str]]:
     """
     Trains all TrafficAgents, each run for each agent with a different hyperparameters configuration.
-    Returns a dictionary with a list of all saved models for each TrafficAgent.
+
+    :return: List of all saved models for each agent.
+    :rtype: dict[str, list[str]]
     """
-    models: dict[str, list[str]] = {agent: [] for agent in self._agents}
-    for agent in self._agents:
-      for config in self._agents[agent]['configs']:
-        self._agents[agent]['agent'].set_config(config)
-        models[agent].append(self._agents[agent]['agent'].run(self._multi_plotter.append))
+    models: dict[str, list[str]] = {}
+    for agent in self._agents.values():
+      models[agent.name] = []
+      while agent.config['repeat']:
+        models[agent.name].append(agent.run())
+      self._multi_plotter.add_run(agent.means, agent.name)
     self._multi_plotter.save()
     return models
 
   def run(self, models: dict[str, list[str]], seconds: Union[int, None] = None, use_gui: bool = True):
-    """ 
+    """
     Resets the hyperparameters configuration for all TrafficAgents, then runs all specified TrafficAgents loading each specified model for each run.
     
     :param models: (dict[str, list[str]]) Dictionary of agent names paired with a list of models to load.
     :param seconds: (Union[int, None]) Amount of simulation seconds to run, if None the same amount of simulation seconds used during learning will be used.
     :param use_gui: (bool) Whether to show SUMO GUI.
     """
+    self._multi_plotter.clear()
     if seconds is not None:
       self._traffic_env.set_seconds(seconds)
-    for agent in self._agents:
-      self._agents[agent]['agent'].set_config({})
-      if agent in models:
-        for load_path in models[agent]:
-          self._agents[agent]['agent'].run(self._multi_plotter.append, use_gui, load_path)
+    for model in models:
+      if model in self._agents:
+        agent = self._agents[model]
+        agent.reset()
+        while agent.config['repeat']:
+          agent.run(use_gui, models[model][agent._runs])
+        self._multi_plotter.add_run(agent.means, agent.name)
     self._multi_plotter.save()

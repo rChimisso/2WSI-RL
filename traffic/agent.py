@@ -3,10 +3,10 @@ import numpy
 from pathlib import Path
 from datetime import datetime
 from warnings import warn
-from typing import Union, Literal, Callable, Generic, TypeVar
 from abc import ABC, abstractmethod
-from utils.plotter import Plotter, PlotData, Metric
-from utils.configs import AgentConfig
+from typing import Union, Literal, Callable, Generic, TypeVar
+from utils.plotter import Plotter
+from utils.configs import TrafficAgentConfig, LearningAgentConfig, CanvasConfig, Metric
 from traffic.environment import TrafficEnvironment
 from stable_baselines3 import DQN
 from sumo_rl import SumoEnvironment
@@ -53,46 +53,41 @@ class QLAgentDecoder(json.JSONDecoder):
 A = TypeVar('A', None, QLAgent, DQN)
 """ Generic TypeVar for the kind of agent used in a instatiable subclass of TrafficAgent. """
 
-class TrafficAgent(ABC, Generic[A]):
+C = TypeVar('C', bound = TrafficAgentConfig)
+""" Generic TypeVar for a TrafficAgent hyperparameters and plots configuration. """
+
+class TrafficAgent(ABC, Generic[A, C]):
   """ TrafficAgent to control traffic lights in a TrafficEnvironment. """
 
-  def __init__(self, name: str, color: str, traffic_env: TrafficEnvironment, plot_data: PlotData = PlotData(default_metrics), fixed: bool = False) -> None:
+  def __init__(self, config: C, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(default_metrics), fixed: bool = False) -> None:
     """
     TrafficAgent to control traffic lights in a TrafficEnvironment.
 
-    :param name: (str) Name used to plot and save models.
-    :param color: (str) Color used to plot.
+    :param config: (C) TrafficAgentConfig.
     :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform in.
-    :param plot_data: (PlotData) PlotData to instantiate a Plotter.
+    :param canvas_config: (PlotData) PlotData to instantiate a Plotter.
     :param fixed: (bool) Whether a fixed cycle or a reinforcement learning schema is used.
     """
-    self._time: str = '-'
-    self._config: AgentConfig = {}
-    self._name: str = name
-    self._color: str = color
+    self._config: C = config
     self._traffic_env: TrafficEnvironment = traffic_env
-    self._plotter: Plotter = Plotter(color, plot_data)
+    self._plotter: Plotter = Plotter(config['color'], canvas_config)
     self._fixed: bool = fixed
+    self._runs: int = 0
 
   @property
-  def time(self) -> str:
-    """ Timestamp of the start of the latest run. """
-    return self._time
-
-  @property
-  def config(self) -> AgentConfig:
+  def config(self) -> C:
     """ Current AgentConfig hyperparameters configuration. """
     return self._config
 
   @property
   def name(self) -> str:
     """ Name used to plot and save models. """
-    return self._name
+    return self.config['name']
 
   @property
   def color(self) -> str:
     """ Color used to plot the lines of each run. """
-    return self._color
+    return self.config['color']
 
   @property
   def fixed(self) -> bool:
@@ -102,57 +97,72 @@ class TrafficAgent(ABC, Generic[A]):
     """
     return self._fixed
 
-  def set_config(self, config: AgentConfig) -> None:
+  @property
+  def means(self) -> dict[Metric, list[float]]:
+    """ Means of each metric of each run since the last reset. """
+    return self._plotter.means
+
+  @property
+  def _folder(self) -> str:
+    """ Folder path to use to save files. """
+    return 'outputs/{}/'.format(self.config['name'])
+
+  def _get_subfolder(self, kind: Literal['csv', 'save', 'plot']) -> str:
     """
-    Sets the current AgentConfig hyperparameters configuration.
+    Returns the subfolder path to use to save either csv data, a model or plots.
     
-    :param config: (AgentConfig) hyperparameters configuration to use.
-    """
-    self._config = config
+    :param kind: Kind of the file to save.
+    :type kind: Literal['csv', 'save', 'plot']
 
-  def get_config_item(self, key: Literal['alpha', 'gamma', 'init_eps', 'min_eps', 'decay']) -> float:
+    :return: Subfolder path to use.
+    :rtype: str
     """
-    Returns the given value from the hyperparameters configuration, if present.
-    Returns 0 otherwise (to avoid hard crashes).
-    """
-    value = self.config.get(key)
-    if value is None:
-      warn(f'Hyperparameters configuration has no property {key}, this indicates a missing value in the configuration for the run, make sure to have everything setup properly.')
-      return 0
-    return value
+    return f'{self._folder}{kind}s/'
 
-  def run(
-    self,
-    update_metrics: Callable[[float, Metric, str], None],
-    use_gui: bool = False,
-    load_path: Union[str, None] = None
-  ) -> str:
+  def _get_filename(self, kind: Literal['csv', 'save', 'plot'], learn: bool) -> str:
+    """
+    Returns the file path and name to use to save either csv data, a model or plots.
+
+    :param kind: Kind of the file to save.
+    :type kind: Literal['csv', 'save', 'plot']
+    :param learn: Whether the Agent is learning or running.
+    :type learn: bool
+
+    :return: File path and name.
+    :rtype: str
+    """
+    return '{}{}{}'.format(self._get_subfolder(kind), 'lrn' if learn else 'run', self._runs)
+
+  def reset(self) -> None:
+    """
+    Resets the TrafficAgent, clearing the plots, resetting the config and the counter of the runs done.
+    """
+    self._config['repeat'] = self._runs
+    self._plotter.clear()
+    self._runs = 0
+
+  def run(self, use_gui: bool = False, load_path: Union[str, None] = None) -> str:
     """
     Runs the agent model on a new SumoEnvironment, saves the csv data, the plots and, if load_path is None, saves the agent model to a file.
     
-    :param update_metrics: (Callable[[float, Metric, str], None])
-    :param use_gui: (bool) Whether to show SUMO GUI while running (if True, will slow down the run).
-    :param load_path: (Union[str, None]) The path from which to load the agent model. Must be None to train a new agent model, if set the pre-trained agent model will be loaded and run without further training.
+    :param use_gui: Whether to show SUMO GUI while running (if True, will slow down the run).
+    :type use_gui: bool
+    :param load_path: The path from which to load the agent model. Must be None to train a new agent model, if set the pre-trained agent model will be loaded and run without further training.
+    :type load_path: Union[str, None]
     
     :return: The path of the saved agent model, '' if no model was saved.
+    :rtype: str
     """
+    self._runs += 1
+    self._config['repeat'] -= 1
     learn = load_path is None
-    self._time = str(datetime.now()).split('.')[0].replace(':', '-')
-    env = self._traffic_env.get_sumo_env(self._fixed, self._get_filename('csv'), use_gui)
+    env = self._traffic_env.get_sumo_env(self._fixed, self._get_filename('csv', learn), use_gui)
     agent = self._get_agent(env) if learn else self._load_model(env, load_path)
-    self._run(env, agent, lambda info: self._update_metrics(info, update_metrics), learn)
-    self._plotter.save(self._name)
+    self._plotter.add_run(self._run(env, agent, learn))
+    if not self._config['repeat']:
+      self._plotter.save(self.config['name'])
     env.close()
     return self._save_model(agent) if learn else ''
-
-  def _get_filename(self, type: Literal['csv', 'save']) -> str:
-    """ Returns the file path and name to use to save either csv data or a model. """
-    return f'outputs/{self._name}/{type}s/{self._time},seconds={self._traffic_env.seconds},delta_time={self._traffic_env.delta_time},yellow_time={self._traffic_env.yellow_time},min_green={self._traffic_env.min_green},max_green={self._traffic_env.max_green}'
-
-  def _update_metrics(self, info: dict[Metric, float], callback: Callable[[float, Metric, str], None]) -> None:
-    for metric in info:
-      self._plotter.append(info[metric], metric)
-      callback(info[metric], metric, self._name)
 
   @abstractmethod
   def _get_agent(self, env: SumoEnvironment) -> A:
@@ -174,13 +184,12 @@ class TrafficAgent(ABC, Generic[A]):
     raise NotImplementedError('Method _load_model() must be implemented in a subclass.')
 
   @abstractmethod
-  def _run(self, env: SumoEnvironment, agent: A, update_metrics: Callable[[dict[Metric, float]], None], learn: bool) -> None:
+  def _run(self, env: SumoEnvironment, agent: A, learn: bool) -> dict[Metric, list[float]]:
     """
     Actually runs the given agent on the given environment.
 
     :param env: (SumoEnvironment) SumoEnvironment to run the agent in.
     :param agent: (A) Agent to run.
-    :param 
     :param learn: (bool) Whether the agent should learn or run.
     """
     raise NotImplementedError('Method _run() must be implemented in a subclass.')
@@ -196,25 +205,18 @@ class TrafficAgent(ABC, Generic[A]):
     """
     raise NotImplementedError('Method _save_model() must be implemented in a subclass.')
 
-class FixedCycleTrafficAgent(TrafficAgent[None]):
+class FixedCycleTrafficAgent(TrafficAgent[None, TrafficAgentConfig]):
   """ FixedCycleTrafficAgent to control traffic lights with a fixed cycle schema in a TrafficEnvironment. """
 
-  def __init__(
-    self,
-    name: str,
-    color: str,
-    traffic_env: TrafficEnvironment,
-    plot_data: PlotData = PlotData(default_metrics)
-  ) -> None:
+  def __init__(self, config: TrafficAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(default_metrics)) -> None:
     """
     FixedCycleTrafficAgent to control traffic lights with a fixed cycle schema in a TrafficEnvironment.
 
-    :param name: (str) Name used to plot and save models.
-    :param color: (str) Color used to plot.
+    :param config: (TrafficAgentConfig) TrafficAgentConfig.
     :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform in.
-    :param plot_data: (PlotData) PlotData to instantiate a Plotter.
+    :param canvas_config: (PlotData) PlotData to instantiate a Plotter.
     """
-    super().__init__(name, color, traffic_env, plot_data, True)
+    super().__init__(config, traffic_env, canvas_config, True)
 
   def _get_agent(self, env: SumoEnvironment) -> None:
     return None
@@ -222,14 +224,16 @@ class FixedCycleTrafficAgent(TrafficAgent[None]):
   def _load_model(self, env: SumoEnvironment, path: str) -> None:
     return None
 
-  def _run(self, env: SumoEnvironment, agent: None, update_metrics: Callable[[dict[Metric, float]], None], learn: bool) -> None:
+  def _run(self, env: SumoEnvironment, agent: None, learn: bool) -> dict[Metric, list[float]]:
+    metrics: dict[Metric, list[float]] = {}
     env.reset()
     if not learn:
       done = False
       while not done:
         done = self._step(env)
-        update_metrics(env.metrics[-1])
+      metrics = {metric: [info[metric] for info in env.metrics] for metric in self._plotter.metrics}
       env.reset()
+    return metrics
 
   def _step(self, env: SumoEnvironment) -> bool:
     """
@@ -249,68 +253,40 @@ class FixedCycleTrafficAgent(TrafficAgent[None]):
   def _save_model(self, agent: None) -> str:
     return ''
 
-class LearningTrafficAgent(TrafficAgent[A], ABC, Generic[A]):
+class LearningTrafficAgent(TrafficAgent[A, LearningAgentConfig], ABC, Generic[A]):
   """ TrafficAgent that can learn. """
 
-  def __init__(
-    self,
-    name: str,
-    color: str,
-    traffic_env: TrafficEnvironment,
-    plot_data: PlotData = PlotData(default_metrics)
-  ) -> None:
+  def __init__(self, config: LearningAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(default_metrics)) -> None:
     """
     TrafficAgent that can learn.
 
-    :param name: (str) Name used to plot and save models.
-    :param color: (str) Color used to plot.
+    :param config: (LearningAgentConfig) TrafficAgentConfig.
     :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform in.
-    :param plot_data: (PlotData) PlotData to instantiate a Plotter.
+    :param canvas_config: (PlotData) PlotData to instantiate a Plotter.
     """
-    super().__init__(name, color, traffic_env, plot_data)
-    self._config = {}
-    # self.alpha: float = 0.1
-    # self.gamma: float = 0.75
-    # self.init_eps: float = 1
-    # self.min_eps: float = 0.1
-    # self.decay: float = 1
-  
-  def _get_filename(self, type: Literal['csv', 'save']) -> str:
-    alpha = self.get_config_item('alpha')
-    gamma = self.get_config_item('gamma')
-    init_eps = self.get_config_item('init_eps')
-    min_eps = self.get_config_item('min_eps')
-    decay = self.get_config_item('decay')
-    return f'{super()._get_filename(type)},{alpha=},{gamma=},{init_eps=},{min_eps=},{decay=}'
+    super().__init__(config, traffic_env, canvas_config)
 
 class QLTrafficAgent(LearningTrafficAgent[QLAgent]):
   """ LearningTrafficAgent using a Q-Learning model. """
 
-  def __init__(
-    self,
-    name: str,
-    color: str,
-    traffic_env: TrafficEnvironment,
-    plot_data: PlotData = PlotData(default_metrics)
-  ) -> None:
+  def __init__(self, config: LearningAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(default_metrics)) -> None:
     """
     LearningTrafficAgent using a Q-Learning model.
 
-    :param name: (str) Name used to plot and save models.
-    :param color: (str) Color used to plot.
+    :param config: (LearningAgentConfig) TrafficAgentConfig.
     :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform in.
-    :param plot_data: (PlotData) PlotData to instantiate a Plotter.
+    :param canvas_config: (PlotData) PlotData to instantiate a Plotter.
     """
-    super().__init__(name, color, traffic_env, plot_data)
+    super().__init__(config, traffic_env, canvas_config)
 
   def _get_agent(self, env: SumoEnvironment) -> QLAgent:
     return QLAgent(
       starting_state = env.encode(env.reset()[0], env.ts_ids[0]),
       state_space = env.observation_space,
       action_space = env.action_space,
-      alpha = self.get_config_item('alpha'),
-      gamma = self.get_config_item('gamma'),
-      exploration_strategy = EpsilonGreedy(self.get_config_item('init_eps'), self.get_config_item('min_eps'), self.get_config_item('decay'))
+      alpha = self.config['alpha'],
+      gamma = self.config['gamma'],
+      exploration_strategy = EpsilonGreedy(self.config['init_eps'], self.config['min_eps'], self.config['decay'])
     )
 
   def _load_model(self, env: SumoEnvironment, path: str) -> QLAgent:
@@ -327,17 +303,19 @@ class QLTrafficAgent(LearningTrafficAgent[QLAgent]):
       agent.q_table = agent_data['qtable']
       return agent
 
-  def _run(self, env: SumoEnvironment, agent: QLAgent, update_metrics: Callable[[dict[Metric, float]], None], learn: bool) -> None:
+  def _run(self, env: SumoEnvironment, agent: QLAgent, learn: bool) -> dict[Metric, list[float]]:
+    metrics: dict[Metric, list[float]] = {}
     done = False
     while not done:
       state, reward, _, done, _ = env.step(agent.act()) # type: ignore
-      update_metrics(env.metrics[-1])
       if learn:
         agent.learn(env.encode(state, env.ts_ids[0]), reward)
+    metrics = {metric: [info[metric] for info in env.metrics] for metric in self._plotter.metrics}
     env.reset()
+    return metrics
 
   def _save_model(self, agent: QLAgent) -> str:
-    path = '{}.json'.format(self._get_filename('save'))
+    path = '{}.json'.format(self._get_filename('save', True))
     Path(Path(path).parent).mkdir(parents = True, exist_ok = True)
     with open(path, 'w+') as file:
       json.dump(agent, file, indent = 2, cls = QLAgentEncoder)
@@ -346,55 +324,50 @@ class QLTrafficAgent(LearningTrafficAgent[QLAgent]):
 class DQLTrafficAgent(LearningTrafficAgent[DQN]):
   """ LearningTrafficAgent using a Deep Q-Learning model. """
 
-  def __init__(
-    self,
-    name: str,
-    color: str,
-    traffic_env: TrafficEnvironment,
-    plot_data: PlotData = PlotData(default_metrics)
-  ) -> None:
+  def __init__(self, config: LearningAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(default_metrics)) -> None:
     """
     LearningTrafficAgent using a Deep Q-Learning model.
 
-    :param name: (str) Name used to plot and save models.
-    :param color: (str) Color used to plot.
+    :param config: (LearningAgentConfig) TrafficAgentConfig.
     :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform in.
-    :param plot_data: (PlotData) PlotData to instantiate a Plotter.
+    :param canvas_config: (PlotData) PlotData to instantiate a Plotter.
     """
-    super().__init__(name, color, traffic_env, plot_data)
+    super().__init__(config, traffic_env, canvas_config)
 
   def _get_agent(self, env: SumoEnvironment) -> DQN:
     return DQN(
       policy = "MlpPolicy",
       env = env,
-      learning_rate = self.get_config_item('alpha'),
+      learning_rate = self.config['alpha'],
       learning_starts = 0,
-      gamma = self.get_config_item('gamma'),
+      gamma = self.config['gamma'],
       train_freq = (1, 'step'),
       gradient_steps = -1,
       target_update_interval = max(1, self._traffic_env.seconds // 100),
-      exploration_fraction = self.get_config_item('decay'),
-      exploration_initial_eps = self.get_config_item('init_eps'),
-      exploration_final_eps = self.get_config_item('min_eps'),
-      verbose = 1
+      exploration_fraction = self.config['decay'],
+      exploration_initial_eps = self.config['init_eps'],
+      exploration_final_eps = self.config['min_eps'],
+      verbose = 0
     )
 
   def _load_model(self, env: SumoEnvironment, path: str) -> DQN:
     return DQN.load(env = env, path = path)
 
-  def _run(self, env: SumoEnvironment, agent: DQN, update_metrics: Callable[[dict[Metric, float]], None], learn: bool) -> None:
+  def _run(self, env: SumoEnvironment, agent: DQN, learn: bool) -> dict[Metric, list[float]]:
+    metrics: dict[Metric, list[float]] = {}
     if learn:
-      # total_timesteps needs to be divided by delta_time because DQN counts the actual seconds rather than the agent steps.
-      agent.learn(total_timesteps = self._traffic_env.seconds // self._traffic_env.delta_time, log_interval = 1, callback = lambda locals, globals: update_metrics(locals['infos'][0]))
+      metrics = {metric: [] for metric in self._plotter.metrics}
+      agent.learn(self._traffic_env.seconds // self._traffic_env.delta_time, lambda locals, globals: {metrics[metric].append(locals['infos'][0][metric]) for metric in metrics}, 1)
     else:
       done = False
       state = env.reset()[0]
       while not done:
         state, _, _, done, _ = env.step(agent.predict(state)[0]) # type: ignore
-        update_metrics(env.metrics[-1])
+      metrics = {metric: [info[metric] for info in env.metrics] for metric in self._plotter.metrics}
       env.reset()
+    return metrics
 
   def _save_model(self, agent: DQN) -> str:
-    path = '{}.zip'.format(self._get_filename('save'))
+    path = '{}.zip'.format(self._get_filename('save', True))
     agent.save(path)
     return path
