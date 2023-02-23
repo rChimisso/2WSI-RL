@@ -169,7 +169,11 @@ class TrafficAgent(ABC, Generic[A, C]):
     """
     Returns the agent to run on the given SumoEnvironment.
 
-    :param env: (SumoEnvironment) SumoEnvironment to run the agent on.
+    :param env: SumoEnvironment to run the agent on.
+    :type env: SumoEnvironment
+
+    :return: The actual agent to run.
+    :rtype: A
     """
     raise NotImplementedError('Method _get_agent() must be implemented in a subclass.')
 
