@@ -1,7 +1,10 @@
 from pathlib import Path
 from typing import Union
-from pylab import Figure, GridSpec, Axes, figure
+from pylab import Axes, figure
 from matplotlib.transforms import Bbox
+from matplotlib.figure import Figure
+from matplotlib.gridspec import GridSpec
+from matplotlib.backend_bases import RendererBase
 from utils.configs import Metric, CanvasConfig, PlotterAgentConfig
 
 TITLES: dict[Metric, str] = {
@@ -63,9 +66,9 @@ class Canvas():
     return self._gridspec
 
   @property
-  def renderer(self):
+  def renderer(self) -> RendererBase:
     """ Canvas Renderer. """
-    return self._figure.canvas.get_renderer()
+    return self._figure.canvas.get_renderer() # type: ignore
 
   def plot(self, metric: Metric, data: list[float], color: str, label: Union[str, None] = None, width: int = 1) -> None:
     """
