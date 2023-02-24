@@ -135,8 +135,9 @@ class Canvas():
 
   def clear(self) -> None:
     """ Clears all plots. """
-    for plot in self._metrics.values():
+    for metric, plot in self._metrics.items():
       plot.clear()
+      self._init_subplot(plot, metric)
 
 class Plotter():
   """ Plotter for several runs and metrics of a single TrafficAgent. """
