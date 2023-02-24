@@ -45,10 +45,12 @@ class Runner():
     models: dict[str, list[str]] = {}
     for agent in self._agents.values():
       models[agent.name] = []
+      print(f'Learning for agent {agent.name}.')
       while agent.config['repeat']:
+        print(f'Run #{agent.current_run + 1}.')
         models[agent.name].append(agent.run())
       self._multi_plotter.add_run(agent.means, agent.name)
-    self._multi_plotter.save()
+    self._multi_plotter.save(True)
     return models
 
   def run(self, models: dict[str, list[str]], seconds: Union[int, None] = None, use_gui: bool = True) -> None:
@@ -69,7 +71,9 @@ class Runner():
       if model in self._agents:
         agent = self._agents[model]
         agent.reset()
+        print(f'Running agent {agent.name}.')
         while agent.config['repeat']:
+          print(f'Run #{agent.current_run + 1}.')
           agent.run(use_gui, models[model][agent._runs])
         self._multi_plotter.add_run(agent.means, agent.name)
-    self._multi_plotter.save()
+    self._multi_plotter.save(False)

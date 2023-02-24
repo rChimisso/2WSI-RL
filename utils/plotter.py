@@ -115,7 +115,7 @@ class Canvas():
       return self._metrics[metric]
     return None
 
-  def save(self, metric: Metric, folder: Union[str, None] = None) -> None:
+  def save(self, metric: Metric, learn: bool, folder: Union[str, None] = None) -> None:
     """
     Saves the plot of the given metrics, if any.
     
@@ -131,7 +131,7 @@ class Canvas():
       bbox = Bbox.from_extents(bbox.x0 / dpi, bbox.y0 / dpi, bbox.xmax / dpi, bbox.ymax / dpi)
       subfolder = f'{folder}/' if folder is not None else ''
       Path(f'outputs/{subfolder}plots/').mkdir(parents = True, exist_ok = True)
-      self.figure.savefig(f'outputs/{subfolder}plots/{TITLES[metric]} plot.png', bbox_inches = bbox.expanded(1.01, 1.01))
+      self.figure.savefig(f'outputs/{subfolder}plots/{TITLES[metric]} plot ({"lrn" if learn else "run"}).png', bbox_inches = bbox.expanded(1.01, 1.01))
 
   def clear(self) -> None:
     """ Clears all plots. """
@@ -200,7 +200,7 @@ class Plotter():
           self._means[metric].append(value / len(self._runs))
     self._canvas.plot(metric, self._means[metric], self.color, label, 2)
 
-  def save(self, folder: str) -> None:
+  def save(self, learn: bool, folder: str) -> None:
     """
     Plots and then saves the graphs for each metric.
 
@@ -208,8 +208,9 @@ class Plotter():
     :type folder: str
     """
     for metric in self.metrics:
-      self.plot(metric)
-      self._canvas.save(metric, folder)
+      if len(self.means[metric]) > 0:
+        self.plot(metric)
+        self._canvas.save(metric, learn, folder)
 
   def clear(self) -> None:
     """ Clears all plots and empties all data. """
@@ -266,12 +267,12 @@ class MultiPlotter():
     if agent in self.plotters:
       self.plotters[agent].plot(metric)
 
-  def save(self) -> None:
+  def save(self, learn: bool) -> None:
     """ Plots and then saves the graphs for each metric. """
     for metric in self.metrics:
       for plotter in self.plotters:
         self.plotters[plotter].plot(metric, plotter, True)
-      self.canvas.save(metric)
+      self.canvas.save(metric, learn)
   
   def clear(self) -> None:
     """ Clears all plots and empties all data. """

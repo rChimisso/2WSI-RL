@@ -94,6 +94,11 @@ class TrafficAgent(ABC, Generic[A, C]):
     return self._fixed
 
   @property
+  def current_run(self) -> int:
+    """ Number of the current run. """
+    return self._runs
+
+  @property
   def means(self) -> dict[Metric, list[float]]:
     """ Means of each metric of each run since the last reset. """
     return self._plotter.means
@@ -156,7 +161,7 @@ class TrafficAgent(ABC, Generic[A, C]):
     agent = self._get_agent(env) if learn else self._load_model(env, load_path)
     self._plotter.add_run(self._run(env, agent, learn))
     if not self._config['repeat']:
-      self._plotter.save(self.config['name'])
+      self._plotter.save(learn, self.config['name'])
     env.close()
     return self._save_model(agent) if learn else ''
 
