@@ -208,8 +208,8 @@ class Plotter():
     :type folder: str
     """
     for metric in self.metrics:
+      self.plot(metric)
       if len(self.means[metric]) > 0:
-        self.plot(metric)
         self._canvas.save(metric, learn, folder)
 
   def clear(self) -> None:

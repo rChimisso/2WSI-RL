@@ -138,7 +138,8 @@ class TrafficAgent(ABC, Generic[A, C]):
     """
     Resets the TrafficAgent, clearing the plots, resetting the config and the counter of the runs done.
     """
-    self._config['repeat'] = self._runs
+    if self._runs:
+      self._config['repeat'] = self._runs
     self._plotter.clear()
     self._runs = 0
 
