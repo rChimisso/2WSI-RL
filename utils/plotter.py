@@ -21,7 +21,8 @@ class Canvas():
     """
     Canvas to plot metrics.
 
-    :param config: (CanvasConfig) Canvas configuration.
+    :param config: Canvas configuration.
+    :type config: CanvasConfig
     """
     plots_per_col = len(config.metrics) // config.plots_per_row + len(config.metrics) % config.plots_per_row
     self._figure: Figure = figure(dpi = config.dpi, figsize = (48, plots_per_col * 8))
@@ -32,11 +33,15 @@ class Canvas():
     """
     Returns a new subplot to add to the canvas figure.
 
-    :param plots_per_row: (int) How many plots draw in each canvas row.
-    :param index: (int) Index of the metric in the list of all metrics to plot.
-    :param metric: (Metric) Metric to plot.
+    :param plots_per_row: How many plots draw in each canvas row.
+    :type plots_per_row: int
+    :param index: Index of the metric in the list of all metrics to plot.
+    :type index: int
+    :param metric: Metric to plot.
+    :type metric: Metric
 
     :return: The subplot.
+    :rtype: Axes
     """
     col_index = index % plots_per_row * 2
     return self._init_subplot(self.figure.add_subplot(self.gridspec[index // plots_per_row, col_index:(col_index + 2)]), metric)
@@ -45,10 +50,13 @@ class Canvas():
     """
     Initializes and returns the given subplot.
 
-    :param plot: (Axes) Subplot to initialize.
-    :param metric: (Metric) Metric to plot.
+    :param plot: Subplot to initialize.
+    :type plot: Axes
+    :param metric: Metric to plot.
+    :type metric: Metric
 
     :return: The subplot.
+    :rtype: Axes
     """
     plot.set_title(f'{TITLES[metric]} over time')
     plot.set_xlabel('Step')
@@ -74,11 +82,16 @@ class Canvas():
     """
     Plots the given data in the plot of the given metric, creating a line with the given color and optionally the associated label.
 
-    :param metric: (Metric) Metric for which plot the data.
-    :param data: (list[float]) Data to plot.
-    :param color: (str) Color of the line.
-    :param label: (Union[str, None]) Optional label for the line.
-    :param width: (int) Optional line width.
+    :param metric: Metric for which plot the data.
+    :type metric: Metric
+    :param data: Data to plot.
+    :type data: list[float]
+    :param color: Color of the line.
+    :type color: str
+    :param label: Optional label for the line.
+    :type label: Union[str, None]
+    :param width: Optional line width.
+    :type width: int
     """
     plot = self.get_plot(metric)
     if plot is not None:
@@ -92,9 +105,11 @@ class Canvas():
     """
     Returns the plot for the given metric.
 
-    :param metric: (Metric) Metric of the plot.
+    :param metric: Metric of the plot.
+    :type metric: Metric
 
     :return: The plot for the given metric or, if no plot was saved for the given metric, None.
+    :rtype: Union[Axes, None]
     """
     if metric in self._metrics:
       return self._metrics[metric]
@@ -104,8 +119,10 @@ class Canvas():
     """
     Saves the plot of the given metrics, if any.
     
-    :param metric: (Metric) Metric of the plot.
-    :param folder: (Union[str, None]) Subfolder in which to save the plots.
+    :param metric: Metric of the plot.
+    :type metric: Metric
+    :param folder: Subfolder in which to save the plots.
+    :type folder: Union[str, None]
     """
     plot = self.get_plot(metric)
     bbox = plot.get_tightbbox(renderer = self.renderer) if plot is not None else None
@@ -128,9 +145,12 @@ class Plotter():
     """
     Plotter for several runs and metrics of a single TrafficAgent.
     
-    :param color: (str) Color of the mean.
-    :param canvas_config: (CanvasConfig) Canvas configuration, used to instantiate a new Canvas, if canvas is None, and retrieve the list of metrics to plot.
-    :param canvas: (Union[Canvas, None]) Optional Canvas instance to use to plot.
+    :param color: Color of the mean.
+    :type color: str
+    :param canvas_config: Canvas configuration, used to instantiate a new Canvas, if canvas is None, and retrieve the list of metrics to plot.
+    :type config: CanvasConfig
+    :param canvas: Optional Canvas instance to use to plot.
+    :type canvas: Union[Canvas, None]
     """
     self.color: str = color
     if canvas is None:
@@ -153,7 +173,8 @@ class Plotter():
     """
     Adds the data of a run to the list of data to plot.
 
-    :param data: (dict[Metric, list[float]]) Data of the run.
+    :param data: Data of the run.
+    :type data: dict[Metric, list[float]]
     """
     if data:
       self._runs.append({metric: data[metric] for metric in self.metrics})
@@ -162,8 +183,10 @@ class Plotter():
     """
     Plots the graph for the given metric, optionally using the provided label.
 
-    :param metric: (Metric) Metric for which plot the data.
-    :param label: (Union[str, None]) Optional label that the mean line will have associated.
+    :param metric: Metric for which plot the data.
+    :type metric: Metric
+    :param label: Optional label that the mean line will have associated.
+    :type label: Union[str, None]
     """
     self._means[metric] = []
     for run in self._runs:
@@ -180,7 +203,8 @@ class Plotter():
     """
     Plots and then saves the graphs for each metric.
 
-    :param folder: (str) Subfolder in which to save the plots.
+    :param folder: Subfolder in which to save the plots.
+    :type folder: str
     """
     for metric in self.metrics:
       self.plot(metric)
@@ -233,7 +257,7 @@ class MultiPlotter():
     """
     Plots and then saves the graphs for each metric.
 
-    :param metric: (Metric) Metric for which plot the data.
+    :param metric: Metric for which plot the data.
     :type metric: Metric
     :param agent: Name of the agent that produced the data.
     :type agent: str

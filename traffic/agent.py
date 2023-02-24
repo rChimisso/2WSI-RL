@@ -1,10 +1,9 @@
 import json
 import numpy
 from pathlib import Path
-from datetime import datetime
 from warnings import warn
 from abc import ABC, abstractmethod
-from typing import Union, Literal, Callable, Generic, TypeVar
+from typing import Union, Literal, Generic, TypeVar
 from utils.plotter import Plotter
 from utils.configs import TrafficAgentConfig, LearningAgentConfig, CanvasConfig, Metric
 from traffic.environment import TrafficEnvironment
@@ -12,13 +11,6 @@ from stable_baselines3 import DQN
 from sumo_rl import SumoEnvironment
 from sumo_rl.agents import QLAgent
 from sumo_rl.exploration import EpsilonGreedy
-
-default_metrics: list[Metric] = [
-  'system_total_stopped',
-  'system_total_waiting_time',
-  'system_mean_waiting_time',
-  'system_mean_speed'
-]
 
 class QLAgentEncoder(json.JSONEncoder):
   """ JSONEncoder for QLAgent instances. """
@@ -59,14 +51,18 @@ C = TypeVar('C', bound = TrafficAgentConfig)
 class TrafficAgent(ABC, Generic[A, C]):
   """ TrafficAgent to control traffic lights in a TrafficEnvironment. """
 
-  def __init__(self, config: C, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(default_metrics), fixed: bool = False) -> None:
+  def __init__(self, config: C, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(), fixed: bool = False) -> None:
     """
     TrafficAgent to control traffic lights in a TrafficEnvironment.
 
-    :param config: (C) TrafficAgentConfig.
-    :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform in.
-    :param canvas_config: (PlotData) PlotData to instantiate a Plotter.
-    :param fixed: (bool) Whether a fixed cycle or a reinforcement learning schema is used.
+    :param config: TrafficAgentConfig.
+    :type config: C
+    :param traffic_env: TrafficEnvironment to perform in.
+    :type traffic_env: TrafficEnvironment
+    :param canvas_config: Canvas configuration.
+    :type canvas_config: CanvasConfig
+    :param fixed: Whether a fixed cycle or a reinforcement learning schema is used.
+    :type fixed: bool
     """
     self._config: C = config
     self._traffic_env: TrafficEnvironment = traffic_env
@@ -182,8 +178,13 @@ class TrafficAgent(ABC, Generic[A, C]):
     """
     Loads and returns the agent model from the given path.
 
-    :param env: (SumoEnvironment) SumoEnvironment to initialize the agent.
-    :param path: (str) Path to the agent model file.
+    :param env: SumoEnvironment to initialize the agent.
+    :type env: SumoEnvironment
+    :param path: Path to the agent model file.
+    :type path: str
+
+    :return: The agent model loaded.
+    :rtype: A
     """
     raise NotImplementedError('Method _load_model() must be implemented in a subclass.')
 
@@ -192,9 +193,15 @@ class TrafficAgent(ABC, Generic[A, C]):
     """
     Actually runs the given agent on the given environment.
 
-    :param env: (SumoEnvironment) SumoEnvironment to run the agent in.
-    :param agent: (A) Agent to run.
-    :param learn: (bool) Whether the agent should learn or run.
+    :param env: SumoEnvironment to run the agent in.
+    :type env: SumoEnvironment
+    :param agent: Agent to run.
+    :type agent: A
+    :param learn: Whether the agent should learn or run.
+    :type learn: bool
+
+    :return: Data of each metric of the run.
+    :rtype: dict[Metric, list[float]]
     """
     raise NotImplementedError('Method _run() must be implemented in a subclass.')
   
@@ -203,22 +210,27 @@ class TrafficAgent(ABC, Generic[A, C]):
     """
     Saves the agent model to a file and then returns its relative path.
 
-    :param agent: (A) agent model to save.
+    :param agent: Agent model to save.
+    :type agent: A
 
     :return: The relative path of the save file.
+    :rtype: str
     """
     raise NotImplementedError('Method _save_model() must be implemented in a subclass.')
 
 class FixedCycleTrafficAgent(TrafficAgent[None, TrafficAgentConfig]):
   """ FixedCycleTrafficAgent to control traffic lights with a fixed cycle schema in a TrafficEnvironment. """
 
-  def __init__(self, config: TrafficAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(default_metrics)) -> None:
+  def __init__(self, config: TrafficAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig()) -> None:
     """
     FixedCycleTrafficAgent to control traffic lights with a fixed cycle schema in a TrafficEnvironment.
 
-    :param config: (TrafficAgentConfig) TrafficAgentConfig.
-    :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform in.
-    :param canvas_config: (PlotData) PlotData to instantiate a Plotter.
+    :param config: TrafficAgentConfig.
+    :type config: TrafficAgentConfig
+    :param traffic_env: TrafficEnvironment to perform in.
+    :type traffic_env: TrafficEnvironment
+    :param canvas_config: Canvas configuration.
+    :type canvas_config: CanvasConfig
     """
     super().__init__(config, traffic_env, canvas_config, True)
 
@@ -243,9 +255,11 @@ class FixedCycleTrafficAgent(TrafficAgent[None, TrafficAgentConfig]):
     """
     Step the given SumoEnvironment, used instead of env.step(action) because a FixedCycleTrafficAgent has no actions and needs less operations to be done.
 
-    :param env: (SumoEnvironment) SumoEnvironment to step.
+    :param env: SumoEnvironment to step.
+    :param env: SumoEnvironment
 
     :return: Whether the given SumoEnvironment simulation has terminated.
+    :rtype: bool
     """
     for _ in range(self._traffic_env.delta_time):
       env._sumo_step()
@@ -257,29 +271,19 @@ class FixedCycleTrafficAgent(TrafficAgent[None, TrafficAgentConfig]):
   def _save_model(self, agent: None) -> str:
     return ''
 
-class LearningTrafficAgent(TrafficAgent[A, LearningAgentConfig], ABC, Generic[A]):
-  """ TrafficAgent that can learn. """
+class QLTrafficAgent(TrafficAgent[QLAgent, LearningAgentConfig]):
+  """ TrafficAgent using a Q-Learning model. """
 
-  def __init__(self, config: LearningAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(default_metrics)) -> None:
+  def __init__(self, config: LearningAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig()) -> None:
     """
-    TrafficAgent that can learn.
+    TrafficAgent using a Q-Learning model.
 
-    :param config: (LearningAgentConfig) TrafficAgentConfig.
-    :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform in.
-    :param canvas_config: (PlotData) PlotData to instantiate a Plotter.
-    """
-    super().__init__(config, traffic_env, canvas_config)
-
-class QLTrafficAgent(LearningTrafficAgent[QLAgent]):
-  """ LearningTrafficAgent using a Q-Learning model. """
-
-  def __init__(self, config: LearningAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(default_metrics)) -> None:
-    """
-    LearningTrafficAgent using a Q-Learning model.
-
-    :param config: (LearningAgentConfig) TrafficAgentConfig.
-    :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform in.
-    :param canvas_config: (PlotData) PlotData to instantiate a Plotter.
+    :param config: TrafficAgentConfig.
+    :type config: LearningAgentConfig
+    :param traffic_env: TrafficEnvironment to perform in.
+    :type traffic_env: TrafficEnvironment
+    :param canvas_config: Canvas configuration.
+    :type canvas_config: CanvasConfig
     """
     super().__init__(config, traffic_env, canvas_config)
 
@@ -325,16 +329,19 @@ class QLTrafficAgent(LearningTrafficAgent[QLAgent]):
       json.dump(agent, file, indent = 2, cls = QLAgentEncoder)
     return path
 
-class DQLTrafficAgent(LearningTrafficAgent[DQN]):
-  """ LearningTrafficAgent using a Deep Q-Learning model. """
+class DQLTrafficAgent(TrafficAgent[DQN, LearningAgentConfig]):
+  """ TrafficAgent using a Deep Q-Learning model. """
 
-  def __init__(self, config: LearningAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig(default_metrics)) -> None:
+  def __init__(self, config: LearningAgentConfig, traffic_env: TrafficEnvironment, canvas_config: CanvasConfig = CanvasConfig()) -> None:
     """
-    LearningTrafficAgent using a Deep Q-Learning model.
+    TrafficAgent using a Deep Q-Learning model.
 
-    :param config: (LearningAgentConfig) TrafficAgentConfig.
-    :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform in.
-    :param canvas_config: (PlotData) PlotData to instantiate a Plotter.
+    :param config: TrafficAgentConfig.
+    :type config: LearningAgentConfig
+    :param traffic_env: TrafficEnvironment to perform in.
+    :type traffic_env: TrafficEnvironment
+    :param canvas_config: Canvas configuration.
+    :type canvas_config: CanvasConfig
     """
     super().__init__(config, traffic_env, canvas_config)
 

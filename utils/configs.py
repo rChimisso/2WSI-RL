@@ -26,7 +26,7 @@ class TrafficAgentConfig(PlotterAgentConfig):
   """ How many times to repeat the run. """
 
 class LearningAgentConfig(TrafficAgentConfig):
-  """ TypedDict for a LearningTrafficAgent hyperparameters configuration. """
+  """ TypedDict for a TrafficAgent using a learning model hyperparameters configuration. """
 
   alpha: float
   """ Learning rate. """
@@ -38,8 +38,8 @@ class LearningAgentConfig(TrafficAgentConfig):
   """ Final value for epsilo, the exploration chance. """
   decay: float
   """
-  If a QLearningTrafficAgent: the constant by which epsilon is multiplied to decrease it at each action taken.
-  If a DeepQLearningTrafficAgent: the fraction of the training time in which to bring epsilon from init_eps to min_eps.
+  If a QLTrafficAgent: the constant by which epsilon is multiplied to decrease it at each action taken.
+  If a DQLTrafficAgent: the fraction of the training time in which to bring epsilon from init_eps to min_eps.
   """
 
 class CanvasConfig():
@@ -52,13 +52,16 @@ class CanvasConfig():
   dpi: int
   """ Dots Per Inch, resolution of the canvas. """
 
-  def __init__(self, metrics: list[Metric], plots_per_row: int = 1, dpi: int = 100) -> None:
+  def __init__(self, metrics: list[Metric] = ['system_total_stopped', 'system_total_waiting_time', 'system_mean_waiting_time', 'system_mean_speed'], plots_per_row: int = 1, dpi: int = 100) -> None:
     """
     Configuration for a Canvas.
 
-    :param metrics: (list[Metric]) List of all metrics to plot (one plot for each metric).
-    :param plots_per_row: (int) How many plots draw in each canvas row.
-    :param dpi: (int) Dots Per Inch, resolution of the canvas.
+    :param metrics: List of all metrics to plot (one plot for each metric).
+    :type metrics: list[Metric]
+    :param plots_per_row: How many plots draw in each canvas row.
+    :type plots_per_row: int
+    :param dpi: Dots Per Inch, resolution of the canvas.
+    :type dpi: int
     """
     self.metrics = metrics
     self.plots_per_row = plots_per_row

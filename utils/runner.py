@@ -24,9 +24,12 @@ class Runner():
 
   def __init__(self, canvas_config: CanvasConfig, traffic_env: TrafficEnvironment, runs_configs: list[RunsConfig]) -> None:
     """
-    :param canvas_config: (CanvasConfig) PlotData to instantiate Plotters.
-    :param traffic_env: (TrafficEnvironment) TrafficEnvironment to perform each run in.
-    :param agents: (list[RunsConfig]) Dictionary of agents names along with their runs configurations.
+    :param canvas_config: PlotData to instantiate Plotters.
+    :type canvas_config: CanvasConfig
+    :param traffic_env: TrafficEnvironment to perform each run in.
+    :type traffic_env: TrafficEnvironment
+    :param agents: Dictionary of agents names along with their runs configurations.
+    :type agents: list[RunsConfig]
     """
     self._traffic_env: TrafficEnvironment = traffic_env
     self._agents: dict[str, TrafficAgent] = {config['name']: agent['cls'](config, traffic_env, canvas_config) for agent in runs_configs for config in agent['configs']}
@@ -48,13 +51,16 @@ class Runner():
     self._multi_plotter.save()
     return models
 
-  def run(self, models: dict[str, list[str]], seconds: Union[int, None] = None, use_gui: bool = True):
+  def run(self, models: dict[str, list[str]], seconds: Union[int, None] = None, use_gui: bool = True) -> None:
     """
     Resets the hyperparameters configuration for all TrafficAgents, then runs all specified TrafficAgents loading each specified model for each run.
     
-    :param models: (dict[str, list[str]]) Dictionary of agent names paired with a list of models to load.
-    :param seconds: (Union[int, None]) Amount of simulation seconds to run, if None the same amount of simulation seconds used during learning will be used.
-    :param use_gui: (bool) Whether to show SUMO GUI.
+    :param models: Dictionary of agent names paired with a list of models to load.
+    :type models: dict[str, list[str]]
+    :param seconds: Amount of simulation seconds to run, if None the same amount of simulation seconds used during learning will be used.
+    :type seconds: Union[int, None]
+    :param use_gui: Whether to show SUMO GUI.
+    :type use_gui: bool
     """
     self._multi_plotter.clear()
     if seconds is not None:
