@@ -182,13 +182,13 @@ The file [2wsi.sumocfg](2wsi/2wsi.sumocfg) can be used to load the net and route
 The environment in which the agents were placed is a simple intersection with a single traffic light, which, as anticipated, is the 2WSI depicted on the image below.  
 This road network has been defined in the 2wsi.net.xml file which, following the SUMO standard, defines lanes, traffic lights, directions, etc.  
 Inside the files 2wsi-1.rou.xml and 2wsi-2.rou.xml, on the other hand, are the definitions for traffic situations, specifying how many vehicles per time unit there should be and which direction they should follow.  
-INSERIRE IMMAGINE 2WSI
+![2wsi](https://user-images.githubusercontent.com/104778397/221368232-e4c9eba4-e974-409f-9b3e-9fa07ffae16d.png)
 
 ## States, Actions and Rewards
 Regarding the encoding of states, actions and rewards, we chose to use the definitions provided by Sumo-RL as a basis.  
 - State: each state is represented by a vector `[phase_one_hot, min_green, lane_1_density, ... ,lane_n_density, lane_1_queue, ... ,lane_n_queue]` where `phase_one_hot` is a one-hot vector encoding the current active green phase, `min_green` is a boolean indicating whether at least `min_green` simulation seconds have already passed since the current green phase was activated, `lane_i_density` is the number of vehicles arriving in the *i*-th lane divided by the total capacity of the lane, and finally `lane_i_queue` is the number of vehicles queuing in the *i*-th lane divided by the total capacity of the lane.  
 - Actions: there are 4 possible actions corresponding to the change from one green phase to another as shown in the figure below.  
-  INSERIRE IMMAGINE actions  
+  ![actions](https://user-images.githubusercontent.com/104778397/221368157-c807ce4c-c1dd-4f04-b9a5-4a7a2959237b.png)  
 - Rewards: the reward function, called Differential Waiting Time, is defined as the cumulative change in vehicle waiting times (Total Waiting Time, *twt*), i.e., *r<sub>t</sub> = twt<sub>t</sub>-twt<sub>t+1</sub>*  
   This measure indicates how much the waiting time in response to an action has improved or worsened, forcing the agent to try to perform the actions that lead to the decrease in *twt*, in fact if the *twt* decreases at the next step, the difference will lead to a positive outcome.
 
