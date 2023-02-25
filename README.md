@@ -108,9 +108,9 @@ The version of Python used is 3.9.13 via [Anaconda](https://www.anaconda.com/pro
 [Visual Studio Code](https://code.visualstudio.com/) was the IDE chosen for developing the project code, from xml files for building the SUMO environments, to Python and Jupyter Notebook files for writing, implementing, and executing the experiments. This editor was chosen because it was already known and had very easy integration of Git, Jupyter Notebook, Python and GitHub.
 
 ## GitHub
-Lastly, [GitHub](https://github.com/) was the last of the main tools used in the implementation of this project, allowing easy coordination between parallel developments (this more Git than GitHub) and a space to save, publish, and share the project repository while still maintaining exclusive ownership of it. It also made it easy to choose a license for the repository, as well as offered the ability to properly view the README in Markdown which contains more inherent and detailed instructions and explanations of the setup, explanation, and implementation of the project code compared to the PDF relation.  
-Although the README contains and integrates the relation itself, the relation in PDF was still uploaded to the repository to allow easier viewing of it, with the advantage of better viewing the table of contents, the division between pages (and thus topics), and Latex formulas.  
-Also, the main difference between the report and the README is that the latter is written in English, while the relation is written in Italian.
+Lastly, [GitHub](https://github.com/) was the last of the main tools used in the implementation of this project, allowing easy coordination between parallel developments (this more Git than GitHub) and a space to save, publish, and share the project repository while still maintaining exclusive ownership of it. It also made it easy to choose a license for the repository, as well as offered the ability to properly view the README in Markdown.  
+Although the README contains the relation itself, the relation in PDF was still uploaded to the repository to allow easier viewing of it, with the advantage of better viewing the table of contents, the division between pages (and thus topics), and Latex formulas.  
+Also, the main difference between the README and the relation is that the latter is written in Italian.
 
 <br/>
 <br/>
