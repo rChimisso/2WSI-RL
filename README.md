@@ -25,7 +25,7 @@
 - ## [Codebase](#codebase-1)
 - ## [Environments](#environments-1)
 - ## [Experiments and results](#experiments-and-results-1)
-- ## [Conclusion and possible developments](#conclusion-and-possible-developments-1)
+- ## [Conclusions and possible developments](#conclusions-and-possible-developments-1)
 - ## [References](#references-1)
 
 <br/>
@@ -187,7 +187,7 @@ The file [2wsi.sumocfg](2wsi/2wsi.sumocfg) can be used to load the net and route
 <br/>
 <br/>
 
-# Conclusion and possible developments
+# Conclusions and possible developments
 
 
 
