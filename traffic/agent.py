@@ -106,7 +106,7 @@ class TrafficAgent(ABC, Generic[A, C]):
   @property
   def _folder(self) -> str:
     """ Folder path to use to save files. """
-    return 'outputs/{}/'.format(self.config['name'])
+    return f'outputs/{self.config["name"]}/'
 
   def _get_subfolder(self, kind: Literal['csv', 'save', 'plot']) -> str:
     """
@@ -132,7 +132,7 @@ class TrafficAgent(ABC, Generic[A, C]):
     :return: File path and name.
     :rtype: str
     """
-    return '{}{}{}'.format(self._get_subfolder(kind), 'lrn' if learn else 'run', self._runs)
+    return f'{self._get_subfolder(kind)}{"lrn" if learn else "run"}{self._runs}'
 
   def reset(self) -> None:
     """
@@ -163,6 +163,7 @@ class TrafficAgent(ABC, Generic[A, C]):
     self._plotter.add_run(self._run(env, agent, learn))
     if not self._config['repeat']:
       self._plotter.save(learn, self.config['name'])
+    self._plotter.close()
     env.close()
     return self._save_model(agent) if learn else ''
 
@@ -329,7 +330,7 @@ class QLTrafficAgent(TrafficAgent[QLAgent, LearningAgentConfig]):
     return metrics
 
   def _save_model(self, agent: QLAgent) -> str:
-    path = '{}.json'.format(self._get_filename('save', True))
+    path = f'{self._get_filename("save", True)}.json'
     Path(Path(path).parent).mkdir(parents = True, exist_ok = True)
     with open(path, 'w+') as file:
       json.dump(agent, file, indent = 2, cls = QLAgentEncoder)
@@ -385,6 +386,7 @@ class DQLTrafficAgent(TrafficAgent[DQN, LearningAgentConfig]):
     return metrics
 
   def _save_model(self, agent: DQN) -> str:
-    path = '{}.zip'.format(self._get_filename('save', True))
+    path = f'{self._get_filename("save", True)}.zip'
+    Path(Path(path).parent).mkdir(parents = True, exist_ok = True)
     agent.save(path)
     return path

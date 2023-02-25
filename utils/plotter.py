@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Union
-from pylab import Axes, figure
+from pylab import Axes, figure, close
 from matplotlib.transforms import Bbox
 from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
@@ -139,6 +139,10 @@ class Canvas():
       plot.clear()
       self._init_subplot(plot, metric)
 
+  def close(self) -> None:
+    """ Closes the canvas. """
+    close(self.figure)
+
 class Plotter():
   """ Plotter for several runs and metrics of a single TrafficAgent. """
 
@@ -216,6 +220,10 @@ class Plotter():
     """ Clears all plots and empties all data. """
     self._init_metrics(list(self._means.keys()))
     self._canvas.clear()
+
+  def close(self) -> None:
+    """ Closes the canvas. """
+    self._canvas.close()
   
   def _init_metrics(self, metrics: list[Metric]) -> None:
     """
@@ -278,3 +286,8 @@ class MultiPlotter():
     """ Clears all plots and empties all data. """
     for plotter in self.plotters.values():
       plotter.clear()
+
+  def close(self) -> None:
+    """ Closes all canvases. """
+    for plotter in self.plotters.values():
+      plotter.close()

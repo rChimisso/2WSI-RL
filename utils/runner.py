@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Union
 from typing_extensions import TypedDict
 from traffic.environment import TrafficEnvironment
@@ -35,6 +36,12 @@ class Runner():
     self._agents: dict[str, TrafficAgent] = {config['name']: agent['cls'](config, traffic_env, canvas_config) for agent in runs_configs for config in agent['configs']}
     self._multi_plotter: MultiPlotter = MultiPlotter([agent.config for agent in self._agents.values()], canvas_config)
 
+  
+  @property
+  def timestamp(self) -> str:
+    """ Current timestamp formatted. """
+    return str(datetime.now()).split('.')[0]
+
   def learn(self) -> dict[str, list[str]]:
     """
     Trains all TrafficAgents, each run for each agent with a different hyperparameters configuration.
@@ -45,12 +52,13 @@ class Runner():
     models: dict[str, list[str]] = {}
     for agent in self._agents.values():
       models[agent.name] = []
-      print(f'Learning for agent {agent.name}.')
+      print(f'{self.timestamp} Learning for agent {agent.name}.')
       while agent.config['repeat']:
-        print(f'Run #{agent.current_run + 1}.')
+        print(f'{self.timestamp} Run #{agent.current_run + 1}.')
         models[agent.name].append(agent.run())
       self._multi_plotter.add_run(agent.means, agent.name)
     self._multi_plotter.save(True)
+    self._multi_plotter.close()
     return models
 
   def run(self, models: dict[str, list[str]], seconds: Union[int, None] = None, use_gui: bool = True) -> None:
@@ -71,9 +79,10 @@ class Runner():
       if model in self._agents:
         agent = self._agents[model]
         agent.reset()
-        print(f'Running agent {agent.name}.')
+        print(f'{self.timestamp} Running agent {agent.name}.')
         while agent.config['repeat']:
-          print(f'Run #{agent.current_run + 1}.')
+          print(f'{self.timestamp} Run #{agent.current_run + 1}.')
           agent.run(use_gui, models[model][agent._runs])
         self._multi_plotter.add_run(agent.means, agent.name)
     self._multi_plotter.save(False)
+    self._multi_plotter.close()
