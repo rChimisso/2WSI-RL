@@ -76,9 +76,9 @@ class TrafficEnvironment():
     """
     Wrapper to get new SumoEnvironments.
 
-    :param net: Path to the net.xml file.
+    :param net: Path to the .net.xml file.
     :type net: str
-    :param rou: Path to the rou.xml file.
+    :param rou: Path to the .rou.xml file.
     :type rou: str
     :param seconds: Number of simulation seconds.
     :type seconds: int
@@ -91,8 +91,8 @@ class TrafficEnvironment():
     :param max_green: Max green time in a phase.
     :type max_green: int
     """
-    self._net: str = net
-    self._rou: str = rou
+    self._net: str = f'{net}.net.xml'
+    self._rou: str = f'{rou}.rou.xml'
     self._seconds: int = seconds + (delta_time - seconds % delta_time) % delta_time
     self._delta_time: int = delta_time
     self._yellow_time: int = yellow_time
