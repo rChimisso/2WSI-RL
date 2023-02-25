@@ -179,11 +179,17 @@ The file [2wsi.sumocfg](2wsi/2wsi.sumocfg) can be used to load the net and route
 # Environments
 
 ## Definitions
-The environment in which the agents were placed is a simple intersection with a single traffic light, which, as anticipated, is the 2WSI depicted on the image below.  
+<img align="right" src="https://user-images.githubusercontent.com/104778397/221368434-15e1b009-e95c-4823-a949-f735f1484288.png">
+The environment in which the agents were placed is a simple intersection with a single traffic light, which, as anticipated, is the 2WSI depicted on the image to the right.  
 This road network has been defined in the 2wsi.net.xml file which, following the SUMO standard, defines lanes, traffic lights, directions, etc.  
 Inside the files 2wsi-1.rou.xml and 2wsi-2.rou.xml, on the other hand, are the definitions for traffic situations, specifying how many vehicles per time unit there should be and which direction they should follow.  
-![2wsi](https://user-images.githubusercontent.com/104778397/221368360-7e18f6dd-9a87-4098-a42c-24a55159ea5d.png)
 
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
 
 ## States, Actions and Rewards
 Regarding the encoding of states, actions and rewards, we chose to use the definitions provided by Sumo-RL as a basis.  
