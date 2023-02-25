@@ -136,6 +136,8 @@ If you're using VSCode, after these simple steps everything is ready to go!
 
 # Codebase
 
+*Note: this project only supports single agents, which means a single traffic light intersection.*
+
 The main file is the Jupyter Notebook note [note.ipynb](note.ipynb), it contains the settings of the plots, the settings of the environment and the list of settings for each run. It also contains an instance of Runner used to run each provided configuration.  
 The meaning of each parameter is pretty straightforward and there's also in-code documentation.  
 
@@ -144,7 +146,8 @@ Under [traffic](traffic) there are two main modules: [agent.py](traffic/agent.py
 In the `environment` module there are just a couple of wrappers around Sumo-RL `SumoEnvironment`, one (`SumoEnvironmentWrapper`) just to change the filename of the saved csv files, the other one (`TrafficEnvironment`) to get fresh instances of `SumoEnvironment`s.  
 
 In the `agent` module there are all the implementation of agents that handle the phase change of the traffic light. A `TrafficAgent` handles not only its own learning model, but also saving and plotting data, stepping the environment, learning or performing, etc.  
-They all inherit from the `TrafficAgent` abstract class and each subclass provides its own model implementation and data saving by overriding specific methods.
+They all inherit from the `TrafficAgent` abstract class and each subclass provides its own model implementation and data saving by overriding specific methods.  
+The `DQLTrafficAgent` uses SB3 DQN implementation, but offers small freedom of configuration apart from basic QL parameters.
 
 Under [utils](utils) there are utility modules that handle specific parts of the project.
 
@@ -163,6 +166,8 @@ The [plotter.py](utils/plotter.py) module contains the classes that handle plott
 The [runner.py](utils/runner.py) module handles training and running several agents in batch.  
 After the end of all specified runs, an agent will plot and save its graphs. At the end of all training/running the `Runner` instance will plot and save using a `MultiPlotter`.  
 After each training run the agents will save their trained model that can be later used to evaluate the result of the training.
+
+Under [2way-single-intersection](2way-single-intersection) there are all nets and routes used to configure a TrafficEnvironment. The structure of such files is the standard SUMO structure and as such the other nets and routes provided as examples by Sumo-RL can be freely used as well as custom files following the same structure.
 
 <br/>
 <br/>

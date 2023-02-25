@@ -55,7 +55,7 @@ class SumoEnvironmentWrapper(SumoEnvironment):
       max_green = max_green,
       fixed_ts = fixed_ts,
       single_agent = True,
-      add_per_agent_info = True
+      add_per_agent_info = False
     )
 
   def save_csv(self, out_csv_name: str, run: int) -> None:
