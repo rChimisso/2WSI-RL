@@ -5,14 +5,7 @@ from matplotlib.transforms import Bbox
 from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 from matplotlib.backend_bases import RendererBase
-from utils.configs import Metric, CanvasConfig, PlotterAgentConfig
-
-TITLES: dict[Metric, str] = {
-  'system_total_stopped': 'Number of stationary vehicles',
-  'system_total_waiting_time': 'Total waiting time',
-  'system_mean_waiting_time': 'Mean waiting time',
-  'system_mean_speed': 'Mean speed'
-}
+from utils.configs import Metric, TITLES, CanvasConfig, PlotterAgentConfig
 
 class Canvas():
   """ Canvas to plot metrics. """

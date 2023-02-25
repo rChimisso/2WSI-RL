@@ -81,6 +81,7 @@ The approach named Deep Q-Network attempts to curb the problems of the simpler D
 <br/>
 
 # Tools
+
 ## SUMO
 [SUMO](https://sumo.dlr.de/docs/) (Simulation of Urban MObility) is an open source urban mobility simulator.  
 SUMO allows developers to simulate vehicular and pedestrian traffic in an urban environment, enabling them to test and evaluate mobility solutions such as smart traffic lights, autonomous vehicles, carpooling, and more.  
@@ -115,6 +116,7 @@ Also, the main difference between the report and the README is that the latter i
 <br/>
 
 # Setup
+
 To setup the project the following steps are needed:  
 - Install Python via Anaconda following the steps [here](https://www.anaconda.com/products/distribution).  
 - Install SUMO following the guide [here](https://sumo.dlr.de/docs/Downloads.php).  
@@ -133,30 +135,61 @@ If you're using VSCode, after these simple steps everything is ready to go!
 <br/>
 
 # Codebase
-The main file is the Jupyter Notebook note [note.ipynb](note.ipynb), it contains the settings of the plots, the settings of the environment and the list of settings for each run. It also contains an instance of Runner used to run each provided configuration.  
-What each parameter does will be explained in detail later, but it's pretty straightforward and there's also in-code documentation.  
 
-Under [traffic](traffic) 
+The main file is the Jupyter Notebook note [note.ipynb](note.ipynb), it contains the settings of the plots, the settings of the environment and the list of settings for each run. It also contains an instance of Runner used to run each provided configuration.  
+The meaning of each parameter is pretty straightforward and there's also in-code documentation.  
+
+Under [traffic](traffic) there are two main modules: [agent.py](traffic/agent.py) and [environment.py](traffic/environment.py)
+
+In the `environment` module there are just a couple of wrappers around Sumo-RL `SumoEnvironment`, one (`SumoEnvironmentWrapper`) just to change the filename of the saved csv files, the other one (`TrafficEnvironment`) to get fresh instances of `SumoEnvironment`s.  
+
+In the `agent` module there are all the implementation of agents that handle the phase change of the traffic light. A `TrafficAgent` handles not only its own learning model, but also saving and plotting data, stepping the environment, learning or performing, etc.  
+They all inherit from the `TrafficAgent` abstract class and each subclass provides its own model implementation and data saving by overriding specific methods.
+
+Under [utils](utils) there are utility modules that handle specific parts of the project.
+
+The [configs.py](utils/configs.py) module is just a collection of all the configuration classes/types used across the codebase. The only exception is the class `RunsConfig` that is instead inside the `runner` module to avoid circular imports when loading the modules.
+
+The [plotter.py](utils/plotter.py) module contains the classes that handle plotting and saving data. In detail:  
+- `Canvas` is the base class of this module that directly uses Matplotlib to plot and save data. Each plot inside this canvas is treated separately and each `Canvas` instance has its own plots (much like each `Figure` is different from one another in Matplotlib).  
+  A Canvas instance automatically creates and arrages as best as possible the plots for the given metrics (one plot for each metric), respecting the `plots_per_row` configuration property that indicates how many plots should stay in a single canvas row.  
+  It is also possible to specify the DPI for the canvas using the `dpi` configuration property.  
+- `Plotter` is a class made to handle the plots and data of multiple runs of a single agent (a single agent configuration).  
+  Each instance has either its own `Canvas` instance or uses the instance provided during initialization.  
+  To plot the data of each metric on the canvas, calling `plot` is necessary. To save the plots, calling `save` is needed and it will call internally `plot` (saving also plots). Clearing and closing the canvas is possible by calling `clear` and `close`.  
+  Each run plotted will have its own semi-transparent line of the color specified during initialization, in addition thicker and opaque line will be calculated and plotted to represent the arithmetic mean of each run.  
+- `MultiPlotter` works similar to `Plotter`, but is used to plot in the same graph multiple means of different agents (different agent configurations).
+
+The [runner.py](utils/runner.py) module handles training and running several agents in batch.  
+After the end of all specified runs, an agent will plot and save its graphs. At the end of all training/running the `Runner` instance will plot and save using a `MultiPlotter`.  
+After each training run the agents will save their trained model that can be later used to evaluate the result of the training.
 
 <br/>
 <br/>
 
 # Environments
 
+
+
 <br/>
 <br/>
 
 # Experiments and results
+
+
 
 <br/>
 <br/>
 
 # Conclusion and possible developments
 
+
+
 <br/>
 <br/>
 
 # References
+
 - P. Alvarez Lopez, M. Behrisch, L. Bieker-Walz, J. Erdmann, Yun-Pang Flötteröd, R. Hilbrich, L. Lücken, J. Rummel, P. Wagner, E. Wiessner, (2018).  
   Microscopic Traffic Simulation using SUMO.  
   IEEE Intelligent Transportation Systems Conference (ITSC).  
