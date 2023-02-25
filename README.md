@@ -133,7 +133,10 @@ If you're using VSCode, after these simple steps everything is ready to go!
 <br/>
 
 # Codebase
+The main file is the Jupyter Notebook note [note.ipynb](note.ipynb), it contains the settings of the plots, the settings of the environment and the list of settings for each run. It also contains an instance of Runner used to run each provided configuration.  
+What each parameter does will be explained in detail later, but it's pretty straightforward and there's also in-code documentation.  
 
+Under [traffic](traffic) 
 
 <br/>
 <br/>
