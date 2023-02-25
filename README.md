@@ -167,7 +167,8 @@ The [runner.py](utils/runner.py) module handles training and running several age
 After the end of all specified runs, an agent will plot and save its graphs. At the end of all training/running the `Runner` instance will plot and save using a `MultiPlotter`.  
 After each training run the agents will save their trained model that can be later used to evaluate the result of the training.
 
-Under [2way-single-intersection](2way-single-intersection) there are all nets and routes used to configure a TrafficEnvironment. The structure of such files is the standard SUMO structure and as such the other nets and routes provided as examples by Sumo-RL can be freely used as well as custom files following the same structure.
+Under [2wsi](2wsi) there are all nets and routes used to configure a TrafficEnvironment. The structure of such files is the standard SUMO structure and as such the other nets and routes provided as examples by Sumo-RL can be freely used as well as custom files following the same structure.
+The file [2wsi.sumocfg](2wsi/2wsi.sumocfg) can be used to load the net and route of your choice with SUMO GUI.
 
 <br/>
 <br/>
