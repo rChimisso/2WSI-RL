@@ -11,6 +11,13 @@ Metric = Literal[
   'system_mean_speed'
 ]
 
+TITLES: dict[Metric, str] = {
+  'system_total_stopped': 'Number of stationary vehicles',
+  'system_total_waiting_time': 'Total waiting time',
+  'system_mean_waiting_time': 'Mean waiting time',
+  'system_mean_speed': 'Mean speed'
+}
+
 class PlotterAgentConfig(TypedDict):
   """ TypedDict for a TrafficAgent plotter configuration. """
 
