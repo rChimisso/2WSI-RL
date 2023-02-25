@@ -13,18 +13,13 @@ class RunsConfig(TypedDict):
   configs: list[Union[TrafficAgentConfig, LearningAgentConfig]]
   """ List of configs to use to configure the TrafficAgent at each training run. """
 
-class RunnerAgent(TypedDict):
-  """ TypedDict for a TrafficAgent and its hyperparameters configurations. """
-  agent: TrafficAgent
-  """ TrafficAgent to run """
-  configs: list[Union[TrafficAgentConfig, LearningAgentConfig]]
-  """ Hyperparameters configurations for each run. """
-
 class Runner():
-  """ Runner for several TrafficAgents with possibly different hyperparameters configuration and  """
+  """ Runner for several TrafficAgents with possibly different hyperparameters configuration. """
 
   def __init__(self, canvas_config: CanvasConfig, traffic_env: TrafficEnvironment, runs_configs: list[RunsConfig]) -> None:
     """
+    Runner for several TrafficAgents with possibly different hyperparameters configuration.
+    
     :param canvas_config: PlotData to instantiate Plotters.
     :type canvas_config: CanvasConfig
     :param traffic_env: TrafficEnvironment to perform each run in.
