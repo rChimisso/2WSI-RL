@@ -1,119 +1,130 @@
-# Relazione Progetto IIA 2023
-## Studio sull’applicazione di apprendimento per rinforzo alla gestione di un’intersezione semaforizzata.
-#### Riccardo Chimisso 866009 - Alberto Ricci 869271
+# Study on the application of reinforcement learning to the management of a traffic light intersection.
+#### Università degli Studi di Milano Bicocca, Riccardo Chimisso 866009 - Alberto Ricci 869271
 ---
 
 <br/>
 <br/>
 
-# Sommario
-- ## [Obettivo](#obiettivo)
-- ## [Reinforcement Learning](#apprendimento-per-rinforzo)
-  - ### [Reinforcement Learning](#reinforcement-learning)
-  - ### [Q-Learning](#q-learning)
-  - ### [Deep Reinforcement Learning](#deep-reinforcement-learning)
-  - ### [Deep Q-Learning](#deep-q-learning)
-  - ### [Deep Q-Network](#deep-q-network)
-- ## [Strumenti](#strumenti)
-  - ### [SUMO](#sumo)
-  - ### [Sumo-RL](#sumo-rl)
-  - ### [Matplotlib](#matplotlib)
-  - ### [Stable Baselines 3](#stable-baselines-3)
-  - ### [Python, Anaconda e Jupyter Notebook](#python-anaconda-e-jupyter-notebook)
-  - ### [Visual Studio Code](#visual-studio-code)
-  - ### [GitHub](#github)
-- ## [Ambiente](#ambiente)
-- ## [Esperimenti e risultati](#esperimenti-e-risultati)
-- ## [Conclusione](#conclusione)
+# Table of Contents
+- ## [Aim](#aim-1)
+- ## [Reinforcement Learning](#reinforcement-learning-2)
+  - ### [Reinforcement Learning](#reinforcement-learning-3)
+  - ### [Q-Learning](#q-learning-1)
+  - ### [Deep Reinforcement Learning](#deep-reinforcement-learning-1)
+  - ### [Deep Q-Learning](#deep-q-learning-1)
+  - ### [Deep Q-Network](#deep-q-network-1)
+- ## [Strumenti](#strumenti-1)
+  - ### [SUMO](#sumo-1)
+  - ### [Sumo-RL](#sumo-rl-1)
+  - ### [Matplotlib](#matplotlib-1)
+  - ### [Stable Baselines 3](#stable-baselines-3-1)
+  - ### [Python, Anaconda e Jupyter Notebook](#python-anaconda-e-jupyter-notebook-1)
+  - ### [Visual Studio Code](#visual-studio-code-1)
+  - ### [GitHub](#github-1)
+- ## [Ambiente](#ambiente-1)
+- ## [Esperimenti e risultati](#esperimenti-e-risultati-1)
+- ## [Conclusione](#conclusione-1)
 
 <br/>
 <br/>
 
-# Obiettivo
+# Aim
 
-Si vuole confrontare per un particolare tipo di intersezione semaforizzata, riferita d’ora in poi con **2WSI** (**2** **W**ay **S**ingle **I**ntersection), uno schema di gestione dei semafori a ciclo fisso con due diversi schemi di gestione controllati da agenti che hanno appreso per rinforzo.
-In particolare, verranno quindi confrontati 3 schemi di controllo:  
-- Ciclo fisso: le fasi dei semafori sono fisse e si ripetono sempre uguali.  
-- Q-Learning: i semafori sono controllati da un agente che ha appreso per rinforzo usando la tecnica del Q-Learning, discussa in dettaglio più avanti.  
-- Deep Q-Learning: i semafori sono controllati da un agente che ha appreso per rinforzo usando la tecnica del Deep Q-Learning, discussa in dettaglio più avanti.  
+We want to compare for a particular type of traffic light intersection, referred to henceforth as **2WSI** (**2** **W**ay **S**ingle **I**ntersection), a fixed-loop traffic light management scheme with two different management schemes controlled by reinforcement learning agents.  
+Specifically, 3 control schemes will then be compared:  
+- Fixed-cycle: the phases of the traffic light are fixed and always repeat the same.  
+- Q-Learning: the traffic light is controlled by a reinforcement learning agent using the Q-Learning technique, discussed in detail below.  
+- Deep Q-Learning: the traffic light is controlled by a reinforcement learning agent using the Deep Q-Learning technique, discussed in detail below.  
 
-Ciascuno di questi modelli verrà addestrato con una certa situazione di traffico, per poi testare il risultato con la stessa situazione di traffico usata per l’addestramento e su un’altra situazione di traffico che invece non è stata vista durante l’addestramento.  
-Questa scelta è motivata dal voler non solo confrontare i modelli tra di loro, ma anche verificare quanto i modelli ad apprendimento riescano a generalizzare, evitando l’overfitting, e quindi adattarsi a diverse situazioni di traffico.  
-La robustezza degli agenti è molto importante in quanto nella realtà è facile che un’intersezione semaforizzata sia soggetta a traffico variabile, basta pensare alla differenza tra orario di punta e notte, oppure mesi feriali e festivi.
+Each of these models will be trained with a certain traffic situation, and then the result of the training will be tested with the same traffic situation used for training and another one that was not seen during training.  
+This choice is motivated by wanting not only to compare the models with each other, but also to test how well the learning models can generalize, avoid overfitting, and thus adapt to different traffic situations.  
+The robustness of the agents is very important since in reality it is easy for a traffic light intersection to be subject to variable traffic: just think of the difference between rush hour and night time, or weekday and holiday months.
 
 <br/>
 <br/>
 
-# Apprendimento per rinforzo
+# Reinforcement Learning
 
 ## Reinforcement Learning
-Il Reinforcement Learning è una tecnica di apprendimento che prevede l’apprendimento di un agente attraverso l’interazione con un ambiente dinamico. L'agente interagisce con l'ambiente in modo sequenziale, compiendo azioni e ricevendo una ricompensa (reward).  
-Lo scopo dell'agente è quello di massimizzare la ricompensa cumulativa che viene fornita dall'ambiente in risposta alle sue azioni.  
-L'RL si basa su un processo di apprendimento per esplorazione e sperimentazione, in cui l'agente deve scegliere le azioni da effettuare in modo da massimizzare la sua ricompensa. L'agente apprende dalla sua esperienza accumulando conoscenze e sviluppando strategie sempre più efficaci.  
-Lo scopo di un agente è quindi *max=Σ(s<sub>t</sub>, a<sub>t</sub>)* per *t = 0* a *T*, dove *T* è il massimo di istanti temporali.  
-È da notare che un agente con tale scopo potrebbe trovarsi in indecisione nel caso di sequenze di azioni la cui ricompensa totale sia pari. Ad esempio date le sequenze di ricompensa ⧼ *0, 0, 1* ⧽ e ⧼ *1, 0, 0* ⧽ quale dovrebbe scegliere l’agente? Per decidere si introduce il discount factor *γ* per diminuire il peso che le ricompense future hanno rispetto alle più immediate, così che l’agente scelga la massimizzazione più veloce della ricompensa cumulativa. Il discount factor è *0 ≤ γ ≤ 1* e la ricompensa al tempo *t* è data da:  
-*R<sub>t</sub> = r<sub>t</sub> + γr<sub>t+1</sub> + γ<sup>2</sup>r<sub>t+2</sub> + ... + γ<sup>T-t</sup>r<sub>T</sub> = Σγ<sup>i-t</sup>r<sub>i</sub> = r<sub>t</sub> + R<sub>t+1</sub>* per *i = t* a *T*, dove *r<sub>i</sub>* è la ricompensa per la transizione dell’istante di tempo *i*-esimo. Questa sommatoria altro non è che la serie geometrica, e in quanto tale converge sempre a un valore finito anche per *T = ∞*.
+Reinforcement Learning is a learning technique that involves learning of an agent through interaction with a dynamic environment. The agent interacts with the environment sequentially, performing actions and receiving a reward.  
+The agent's goal is to maximize the cumulative reward that is provided by the environment in response to its actions.  
+RL is based on a process of learning by exploration and experimentation, in which the agent must choose which actions to perform in order to maximize its reward. The agent learns from his experience by accumulating knowledge and developing increasingly effective strategies.  
+The agent's goal is thus *max=Σ(s<sub>t</sub>, a<sub>t</sub>)* for *t = 0* to *T*, where *T* is the maximum of time steps.  
+It should be noted that an agent with such goal might find itself in indecision in the case of sequences of actions whose total reward is equal. For instance, given the sequences of rewards ⧼ *0, 0, 1* ⧽ e ⧼ *1, 0, 0* ⧽ which one should the agent choose? To decide, the discount factor *γ* is introduced to decrease the weight that future rewards have over more immediate ones, so that the agent chooses the fastest maximization of cumulative reward. The discount factor is *0 ≤ γ ≤ 1* and the reward at time *t* is given by:  
+*R<sub>t</sub> = r<sub>t</sub> + γr<sub>t+1</sub> + γ<sup>2</sup>r<sub>t+2</sub> + ... + γ<sup>T-t</sup>r<sub>T</sub> = Σγ<sup>i-t</sup>r<sub>i</sub> = r<sub>t</sub> + R<sub>t+1</sub>* for *i = t* to *T*, where *r<sub>i</sub>* is the reward for the time step *i*. This series is nothing but the geometric series, and as such it always converges to a finite value even for *T = ∞*.
 
 ## Q-Learning
-Il Q-Learning è uno specifico algoritmo di Reinforcement Learning che si basa sulla costruzione di una tabella *Q* che indichi il valore di ricompensa per ogni possibile stato al compimento di una qualsiasi delle azioni possibili.  
-Per costruire tale tabella si utilizza una procedura iterativa in cui l'agente esplora l'ambiente eseguendo delle azioni più o meno casuali. In dettaglio, ad ogni passo, la tabella sarà aggiornata con: *Q[s][a] = Q[s][a] + ⍺(r + γ**ᐧ**max(Q[s']) - Q[s][a])*, dove *s* è lo stato attuale, *a* l’azione compiuta, *r* la ricompensa ottenuta, *s'* lo stato successivo, *γ* il discount factor, *⍺* il learning rate e *max(Q[x])* restituisce la massima ricompensa ottenibile dallo stato *x*.  
-In questo modo la cella della tabella che rappresenta il valore atteso della ricompensa per il compimento dell'azione a nello stato s convergerà gradualmente all’effettivo valore.  
-Come anticipato, la scelta dell’azione da compiere sarà inizialmente casuale, finché non si decide che si è esplorato abbastanza. La politica spesso più usata a questo fine è la *ε*-greedy, dove data una *ε* iniziale che rappresenta la probabilità di compiere un’azione casuale, si diminuisce tale valore al progredire delle iterazioni fino a un minimo.  
-Il QL è una tecnica molto potente ed efficace, in grado di apprendere strategie di azione ottimali in una vasta gamma di applicazioni. Tuttavia, può essere sensibile al rumore, all'indeterminazione delle azioni e all’applicazione su ambienti continui. Inoltre, il QL richiede un grande quantità di memoria per memorizzare la tabella *Q*, specialmente quando l'ambiente ha uno spazio di stati (*S*) e di azioni (*A*) possibili (*ϴ(SA)*).
+Q-Learning is a specific Reinforcement Learning algorithm that is based on the construction of a *Q* table indicating the reward value for each possible state upon the completion of any of the possible actions.  
+To construct such a table, an iterative procedure is used in which the agent explores the environment by performing more or less random actions. In detail, at each step, the table will be updated with: *Q[s][a] = Q[s][a] + ⍺(r + γ**ᐧ**max(Q[s']) - Q[s][a])*, where *s* is the current state, *a* the action performed, *r* the reward obtained, *s'* the next state, *γ* the discount factor, *⍺* the learning rate, and *max(Q[x])* returns the maximum reward obtainable from state *x*.  
+This way, the table cell representing the expected value of the reward for completing action a in state s will gradually converge to the actual value.  
+As anticipated, the choice of action to be performed will initially be random, until it is decided that enough has been explored. The policy often most often used for this purpose is *ε*-greedy, where given an initial *ε* representing the probability of taking a random action, we decrease that value as iterations progress to a minimum.  
+QL is a very powerful and effective technique that can learn optimal action strategies in a wide range of applications. However, it can be sensitive to noise, action indeterminacy and application on continuous environments. In addition, QL requires a large amount of memory to store the *Q* table, especially when the environment has a space of possible states (*S*) and actions (*A*) (*ϴ(SA)*).
 
 ## Deep Reinforcement Learning
-Il Deep Reinforcement Learning è una tecnica di apprendimento automatico basata sull’RL, ma che si pone come obiettivo di sopperire alla problematica di quest’ultimo per spazi di stati e azioni molto grandi. Per farlo si utilizzano delle reti neurali profonde (Deep Neural Networks, da cui il nome) per  approssimare i valori della *Q* table senza richiederne le stesse risorse in termini di memoria.
+Deep Reinforcement Learning is a machine learning technique based on RL, but aimed at overcoming the latter's problem for very large spaces of states and actions. It does this by using deep neural networks (hence the name) to approximate the values of the *Q* table without requiring the same resources in terms of memory.
 
 ## Deep Q-Learning
-L’approccio più semplice per l’implementazione di una rete neurale profonda come approssimatore per la *Q* table consiste nell'utilizzare una rete neurale profonda ad ogni passo per ottenere la ricompensa attesa e aggiornare i pesi della rete neurale tramite il metodo del gradient descent rispetto alla ricompensa effettivamente ottenuta.  
-Questo approccio ha però lo svantaggio di non rispettare due condizioni importanti per la probabile convergenza di un metodo di apprendimento supervisionato come le reti neurali:  
-- Gli obiettivi (target) della rete neurale non sono stazionari, ovvero variano nel tempo, poiché è la rete stessa che ottiene i target attuali in base alle predizioni che essa stessa fa per i target futuri. Infatti la rete neurale stima i valori di *Q*, che rappresentano l'atteso guadagno futuro associato ad una coppia stato-azione, e questi valori vengono utilizzati per calcolare i target per l'aggiornamento dei pesi della rete stessa. Poiché la rete neurale si aggiorna utilizzando i suoi stessi output per stimare i target futuri, i target non sono fissi e variano continuamente nel tempo e questo rende la rete neurale instabile e prona alla non convergenza.  
-- Gli input alla rete neurale non sono indipendenti ed identicamente distribuiti poiché generati da una sequenza temporale con correlazione sequenziale e dipendono dalla *Q* table utilizzata dall'agente, che può cambiare nel tempo a seguito dell'esperienza maturata.
+The simplest approach for implementing a deep neural network as an approximator for the *Q* table is to use a deep neural network at each step to obtain the expected reward and update the neural network weights with the gradient descent method with respect to the reward actually obtained.  
+However, this approach has the disadvantage of not meeting two important conditions for the likely convergence of a supervised learning method such as neural networks:  
+- The targets of the neural network are not stationary, that is, they vary over time, since it is the network itself that obtains the current targets based on the predictions it makes for future targets. In fact, the neural network estimates *Q* values, which represent the expected future gain associated with a state-action pair, and these values are used to calculate the targets for updating the network's own weights. Because the neural network updates itself using its own outputs to estimate future targets, the targets are not fixed and vary continuously over time, which makes the neural network unstable and prone to nonconvergence.  
+- The inputs to the neural network are not independent and identically distributed since they are generated from a time sequence with sequential correlation and depend on the *Q* table used by the agent, which may change over time as a result of experience.
 
 ## Deep Q-Network
-L’approccio che prende il nome di Deep Q-Network cerca di arginare le problematiche del più semplice DQL tramite i seguenti due metodi:  
-- Per diminuire la non stazionarietà dei target si introduce una seconda rete neurale profonda, detta target network, che viene usata per stimare i target a cui deve convergere la rete principale, detta main network, in fase di addestramento. I pesi della target network vengono anch’essi aggiornati con il progredire dell’addestramento, ma con una frequenza molto minore rispetto a quella della main network. In questo modo, è possibile dividere l’addestramento in tanti piccoli problemi di apprendimento supervisionato che vengono presentati all’agente in maniera sequenziale. Questo non solo consente di aumentare la probabilità di convergenza, ma anche migliorare la stabilità del training, sebbene a costo di una velocità minore, in quanto non vengono utilizzati i valori più aggiornati dei target.  
-- Per ridurre l’impatto della correlazione tra gli input viene adottata la tecnica Experience Replay, ovvero l’utilizzo di una struttura dati chiamata replay buffer all’interno della quale salvare dei campioni *(s, a, r, s')* raccolti dall’agente durante l’apprendimento così da poterlo addestrare anche su dei gruppi di campioni selezionati casualmente dal replay buffer, che in questo modo permette di rendere gli input un po’ più i.i.d. di quanto effettivamente siano. Inoltre questa tecnica consente di imparare di più dai singoli episodi, richiamare eventi rari e, in generale, fare un uso migliore dell’esperienza accumulata dall’agente.
+The approach named Deep Q-Network attempts to curb the problems of the simpler DQL through the following two methods:  
+- To decrease the nonstationarity of targets, a second deep neural network, called the target network, is introduced and used to estimate the targets to which the main network, must converge during training. The weights of the target network are also updated as training progresses, but with much less frequency than those of the main network. In this way, it is possible to divide the training into many small supervised learning problems that are presented to the agent sequentially. This not only increases the probability of convergence but also improves the stability of the training, although at the cost of lower convergence speed, since the most up-to-date target values are not used.  
+- To reduce the impact of correlation between inputs, the Experience Replay technique is adopted, which is the use of a data structure called a replay buffer within which to save samples *(s, a, r, s')* collected by the agent during learning so that it can also train on randomly selected groups of samples from the replay buffer, which in this way allows the inputs to be made a little more i.i.d. than they actually are. In addition, this technique makes it possible to learn more from individual episodes, recall rare events, and generally make better use of the agent's accumulated experience.
 
 <br/>
 <br/>
 
 # Strumenti
 ## SUMO
-[SUMO](https://sumo.dlr.de/docs/) (Simulation of Urban MObility) è un simulatore open source di mobilità urbana.  
-SUMO consente agli sviluppatori di simulare il traffico veicolare e pedonale in un ambiente urbano, consentendo loro di testare e valutare soluzioni di mobilità come semafori intelligenti, veicoli autonomi, car pooling e molto altro ancora.  
-Il simulatore è altamente personalizzabile e consente agli utenti di definire le caratteristiche dei veicoli, delle strade e degli incroci, nonché delle condizioni meteorologiche e del traffico, per creare scenari realistici. Inoltre, SUMO offre diverse metriche di valutazione, come il tempo di percorrenza, il consumo di carburante, le emissioni di gas a effetto serra e il tempo di attesa di ciascun veicolo, che possono essere utilizzate per valutare le prestazioni dei sistemi di mobilità.  
-Viene utilizzato in questo progetto proprio come simulatore dell’ambiente, creata la rete stradale come 2WSI e le diverse situazioni di traffico da dover gestire.  
-SUMO fornisce anche un’API chiamata [TraCI](https://sumo.dlr.de/docs/TraCI.html) (Traffic Control Interface), un'interfaccia di controllo del traffico per consentire l'interazione tra il simulatore di traffico e gli agenti esterni, come ad esempio i sistemi di controllo del traffico intelligenti.  
-L'interfaccia messa a disposizione da TraCI è basata su socket che consente agli utenti di controllare i veicoli nel simulatore, modificare le caratteristiche della rete stradale e dei semafori, e ottenere informazioni sullo stato del traffico in tempo reale. Inoltre, TraCI consente anche la registrazione e la riproduzione di scenari di traffico per analizzare i risultati della simulazione. TraCI è supportato da una vasta gamma di linguaggi di programmazione, tra cui Python utilizzato in questo progetto.
+[SUMO](https://sumo.dlr.de/docs/) (Simulation of Urban MObility) is an open source urban mobility simulator.  
+SUMO allows developers to simulate vehicular and pedestrian traffic in an urban environment, enabling them to test and evaluate mobility solutions such as smart traffic lights, autonomous vehicles, carpooling, and more.  
+The simulator is highly customizable and allows users to define the characteristics of vehicles, roads and intersections, as well as weather and traffic conditions, to create realistic scenarios. In addition, SUMO offers several evaluation metrics, such as travel time, fuel consumption, greenhouse gas emissions, and waiting time for each vehicle, which can be used to evaluate the performance of mobility systems.  
+It is used in this project as the simulator of the environment, given the 2WSI road network and the different traffic situations to be handled.  
+SUMO also provides an API called [TraCI](https://sumo.dlr.de/docs/TraCI.html) (Traffic Control Interface) to enable interaction between the traffic simulator and external agents, such as intelligent traffic control systems.  
+The interface provided by TraCI is socket-based, which allows users to control vehicles in the simulator, change the characteristics of the road network and traffic lights, and obtain real-time traffic status information. In addition, TraCI also allows recording and playback of traffic scenarios to analyze simulation results. TraCI is supported by a wide range of programming languages, including Python used in this project.
 
 ## Sumo-RL
-[Sumo-RL](https://github.com/LucasAlegre/sumo-rl) è un progetto open source basato su SUMO e TraCI per l’applicazione di algoritmi di RL ad ambienti di simulazione del traffico per la gestione di intersezioni semaforizzate. Fornisce un’interfaccia in Python semplice da utilizzare per la creazione di ambienti in SUMO e la loro gestione tramite algoritmi di RL. In particolare è possibile utilizzare un’implementazione già fatta del QL, inoltre è facilmente possibile integrare gli ambienti forniti con altre implementazioni di algoritmi di altre librerie, come ad esempio la DQN di Stabe Baselines 3, purché tali implementazioni accettino un ambiente Gymnasium (in caso di singolo semaforo) o Petting Zoo (in caso di multipli semafori).  
+[Sumo-RL](https://github.com/LucasAlegre/sumo-rl) is an open source project based on SUMO and TraCI for applying RL algorithms to traffic simulation environments for managing traffic light intersections. It provides an easy-to-use interface in Python for creating environments in SUMO and managing them using RL algorithms. In particular, a pre-made implementation of QL can be used, and it is also easily possible to integrate the provided environments with other algorithm implementations of other libraries, such as Stabe Baselines 3's DQN, as long as those implementations accept a Gymnasium environment (in case of single traffic lights) or Petting Zoo one (in case of multiple traffic lights).
 
 ## Matplotlib
-[Matplotlib](https://matplotlib.org/) è una libreria in Python per la creazione di visualizzazioni statiche, animate o interattive. Poiché semplice da usare e già integrata con Jupyter Notebook, viene usata in questo progetto per creare e salvare grafici di varie metriche raccolte durante l’esecuzione degli algoritmi di RL.  
-Inizialmente si era anche pensato di permettere la visualizzazione in tempo reale della costruzione dei grafici delle metriche, ma, nonostante si fosse ottenuto tale risultato, si è scelto di escludere questa funzione poiché non valeva l’enorme rallentamento che ricadeva sulle simulazioni.
+[Matplotlib](https://matplotlib.org/) is a Python library for creating static, animated or interactive visualizations. Because it is simple to use and already integrated with Jupyter Notebook, it is used in this project to create and save graphs of various metrics collected during the execution of RL algorithms.  
+Initially, it was also considered to allow real-time visualization of the construction of the metrics plots, but although this was achieved, it was chosen to exclude this feature since it was not worth the enormous slowdown that fell on the simulations.
 
 ## Stable Baselines 3
-[Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) è un’altra libreria open source in Python che fornisce implementazioni di molteplici algoritmi di RL e DRL, di cui in questo progetto si è selezionata quella per DQN, e l’integrazione con ambienti di Gymnasium e Petting Zoo. È stato in realtà necessario installare una versione particolare di SB3 per garantire l’effettiva integrazione con ambienti Gymnasium.
+[Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) is another open source Python library that provides implementations of multiple RL and DRL algorithms, of which the one for DQN was selected in this project, and integration with Gymnasium and Petting Zoo environments. It was actually necessary to install a particular version of SB3 to ensure effective integration with Gymnasium environments.
 
 ## Python, Anaconda e Jupyter Notebook
-Python è stato il linguaggio scelto per questo progetto vista la sua grande adeguatezza nelle applicazioni di apprendimento automatico, e per via del fatto che sia Sumo-RL che Matplotlib sono scritti e facilmente integrabili in Python. Inoltre questo ha permesso l’utilizzo di Jupyter Notebook, che facilita l’esecuzione e la condivisione dello script principale del progetto, permettendo inoltre la visualizzazione dei grafici in real time (come detto però, questo è stato tolto) e la visualizzazione dei grafici completati (anche questa funzione in realtà rimossa per evitare output troppo lunghi, ma è facilmente riattivabile).  
-La versione di Python utilizzata è la 3.9.13 tramite [Anaconda](https://www.anaconda.com/products/distribution), poiché SB3 utilizza [Pytorch](https://pytorch.org/) il quale a sua volta necessita di una versione non superiore alla 3.9 di Python. Inoltre tramite Anaconda e Pytorch è stato possibile eseguire le reti neurali direttamente sulle GPU NVIDIA a nostra disposizione.
+Python was the programming language chosen for this project given its great suitability in machine learning applications, and because both Sumo-RL and Matplotlib are written and easily integrated in Python. In addition, this allowed the use of Jupyter Notebook, which facilitates the execution and sharing of the project's main script, and also allows the display of graphs in real time (as mentioned however, this has been removed) and the display of completed graphs (also a feature actually removed to avoid overly long outputs, but it can be easily reactivated).  
+The version of Python used is 3.9.13 via [Anaconda](https://www.anaconda.com/products/distribution), since SB3 uses [Pytorch](https://pytorch.org/) which in turn requires a version no higher than 3.9 of Python. Also through Anaconda and Pytorch it was possible to run neural networks directly on the NVIDIA GPUs at our disposal.
 
 ## Visual Studio Code
-[Visual Studio Code](https://code.visualstudio.com/) è stato l’IDE scelto per lo sviluppo del codice del progetto, dai file xml per la realizzazione degli ambienti SUMO, ai file Python e Jupyter Notebook per la scrittura, implementazione e esecuzione delle sperimentazioni. La scelta è ricaduta su questo editor poiché già conosciuto e con una facilissima integrazione di Git, Jupyter Notebook, Python e GitHub.
+[Visual Studio Code](https://code.visualstudio.com/) was the IDE chosen for developing the project code, from xml files for building the SUMO environments, to Python and Jupyter Notebook files for writing, implementing, and executing the experiments. This editor was chosen because it was already known and had very easy integration of Git, Jupyter Notebook, Python and GitHub.
 
 ## GitHub
-Infine, [GitHub](https://github.com/) è stato l’ultimo degli strumenti principali utilizzati nella realizzazione di questo progetto, permettendo una facile coordinazione tra sviluppi paralleli (questo più Git che GitHub) e uno spazio per salvare, pubblicare e condividere la repository del progetto, mantenendo comunque l’esclusiva proprietà della stessa. Inoltre ha reso facile la scelta di una licenza per la repository, nonché ha offerto la possibilità di visualizzare propriamente il README in Markdown con in aggiunta istruzioni e spiegazioni più inerenti e dettagliate dell’impostazione, spiegazione e realizzazione del codice del progetto.  
-Sebbene il README contenga e integri la relazione stessa, è stata comunque caricata la relazione in PDF nella repository per permettere una più facile visualizzazione della stessa, con il vantaggio di visualizzare meglio l’indice, la divisione tra pagine (e quindi argomenti) e le formule Latex.  
-Inoltre la differenza principale tra la relazione e il README è che quest’ultimo è scritto in inglese.
+Lastly, [GitHub](https://github.com/) was the last of the main tools used in the implementation of this project, allowing easy coordination between parallel developments (this more Git than GitHub) and a space to save, publish, and share the project repository while still maintaining exclusive ownership of it. It also made it easy to choose a license for the repository, as well as offered the ability to properly view the README in Markdown which contains more inherent and detailed instructions and explanations of the setup, explanation, and implementation of the project code compared to the PDF relation.  
+Although the README contains and integrates the relation itself, the relation in PDF was still uploaded to the repository to allow easier viewing of it, with the advantage of better viewing the table of contents, the division between pages (and thus topics), and Latex formulas.  
+Also, the main difference between the report and the README is that the latter is written in English, while the relation is written in Italian.
 
 <br/>
 <br/>
 
 # Setup
+To setup the project the following steps are needed:  
+- Install Python via Anaconda following the steps [here](https://www.anaconda.com/products/distribution).  
+- Install SUMO following the guide [here](https://sumo.dlr.de/docs/Downloads.php).  
+- Install Pytorch via Conda with the following command:  
+  `conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia`  
+  This will install all required Pytorch modules along with the support to run Pytorch directly on your NVIDIA GPU.  
+- Install the latest version of Sumo-RL via `pip3 install sumo-rl`  
+- Install the latest version of Matplotlib via `pip3 install matplotlib`  
+- Install Stable Baselines 3 via `pip3 install git+https://github.com/DLR-RM/stable-baselines3@feat/gymnasium-support`  
+  This, unlike simply downloading the latest version, will install the unreleased version of SB3 with support for Gymnasium environments.  
+  This is required because Sumo-RL uses Gymnasium internally, but the latest version of SB3 still uses Gym. You can read more [here](https://github.com/DLR-RM/stable-baselines3/pull/780#issue-1144872152).
 
+After these simple steps, everything is ready to go!
 
 <br/>
 <br/>
