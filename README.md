@@ -13,7 +13,7 @@
   - ### [Deep Reinforcement Learning](#deep-reinforcement-learning-1)
   - ### [Deep Q-Learning](#deep-q-learning-1)
   - ### [Deep Q-Network](#deep-q-network-1)
-- ## [Strumenti](#strumenti-1)
+- ## [Tools](#tools-1)
   - ### [SUMO](#sumo-1)
   - ### [Sumo-RL](#sumo-rl-1)
   - ### [Matplotlib](#matplotlib-1)
@@ -21,9 +21,12 @@
   - ### [Python, Anaconda e Jupyter Notebook](#python-anaconda-e-jupyter-notebook-1)
   - ### [Visual Studio Code](#visual-studio-code-1)
   - ### [GitHub](#github-1)
-- ## [Ambiente](#ambiente-1)
-- ## [Esperimenti e risultati](#esperimenti-e-risultati-1)
-- ## [Conclusione](#conclusione-1)
+- ## [Setup](#setup-1)
+- ## [Codebase](#codebase-1)
+- ## [Environments](#environments-1)
+- ## [Experiments and results](#experiments-and-results-1)
+- ## [Conclusion and possible developments](#conclusion-and-possible-developments-1)
+- ## [References](#references-1)
 
 <br/>
 <br/>
@@ -77,7 +80,7 @@ The approach named Deep Q-Network attempts to curb the problems of the simpler D
 <br/>
 <br/>
 
-# Strumenti
+# Tools
 ## SUMO
 [SUMO](https://sumo.dlr.de/docs/) (Simulation of Urban MObility) is an open source urban mobility simulator.  
 SUMO allows developers to simulate vehicular and pedestrian traffic in an urban environment, enabling them to test and evaluate mobility solutions such as smart traffic lights, autonomous vehicles, carpooling, and more.  
@@ -124,7 +127,7 @@ To setup the project the following steps are needed:
   This, unlike simply downloading the latest version, will install the unreleased version of SB3 with support for Gymnasium environments.  
   This is required because Sumo-RL uses Gymnasium internally, but the latest version of SB3 still uses Gym. You can read more [here](https://github.com/DLR-RM/stable-baselines3/pull/780#issue-1144872152).
 
-After these simple steps, everything is ready to go!
+If you're using VSCode, after these simple steps everything is ready to go!
 
 <br/>
 <br/>
@@ -135,17 +138,31 @@ After these simple steps, everything is ready to go!
 <br/>
 <br/>
 
-# Ambiente
+# Environments
 
 <br/>
 <br/>
 
-# Esperimenti e risultati
+# Experiments and results
 
 <br/>
 <br/>
 
-# Conclusione
+# Conclusion and possible developments
 
 <br/>
 <br/>
+
+# References
+- P. Alvarez Lopez, M. Behrisch, L. Bieker-Walz, J. Erdmann, Yun-Pang Flötteröd, R. Hilbrich, L. Lücken, J. Rummel, P. Wagner, E. Wiessner, (2018).  
+  Microscopic Traffic Simulation using SUMO.  
+  IEEE Intelligent Transportation Systems Conference (ITSC).  
+  https://elib.dlr.de/124092/  
+- Lucas N. Alegre, (2019).  
+  SUMO-RL.  
+  GitHub repository.  
+  https://github.com/LucasAlegre/sumo-rl  
+- A. Raffin, A. Hill, A. Gleave, A. Kanervisto, M. Ernestus, N. Dormann, (2021).  
+  Stable-Baselines3: Reliable Reinforcement Learning Implementations.  
+  Journal of Machine Learning Research.  
+  http://jmlr.org/papers/v22/20-1364.html  
