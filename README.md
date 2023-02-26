@@ -283,14 +283,14 @@ In this experiment, abbreviated lt-lt, agents were trained using the low traffic
 The results were not satisfactory in that the fixedcycle agent performed better than all the others. For example, here are graphs showing the total number of stopped vehicles and the total sum of waiting times, both as the step changes:  
 ![Number of stationary vehicles plot (run)](https://user-images.githubusercontent.com/104778397/221413117-a8d98268-e229-4be0-adbc-442c95e10a12.png)  
 ![Total waiting time plot (run)](https://user-images.githubusercontent.com/104778397/221413124-df964ba5-8d16-442d-8b71-d86b6fe1cbd9.png)  
-As can be seen, especially from the sum of waiting times, the fixedcycle agent enabled significantly better traffic management than the agents that learned by reinforcement.  
+As can be seen, especially from the sum of wait times, the fixedcycle agent allowed significantly better traffic management than the agents that learned by reinforcement.  
 Another interesting note is that the QL agents, in each graph, performed significantly worse than compared to the DQL agents.  
-Also peculiar is the first quarter run for agent dql_2 in that it manages to get a smaller number of stationary vehicles than fixedcycle, despite the fact that later this situation worsens and goes to an average similar number. Furthermore, comparing dql_1 and dql_2 the situation is very close, as in the second graph they alternate between who gets the best score, while in the first graph although dql_2 gets, as mentioned before, the best score in the first quarter, it subsequently maintains a worse average than dql_1.  
-Finally, it is interesting to note that although the number of stopped vehicles is very similar if not better for DQL agents than for fixedcycle, the overall waiting times are strongly worse.
+Also peculiar is the first quarter of the run for the dql_2 agent in that it manages to get a smaller number of stationary vehicles than the fixedcycle, despite the fact that later this situation worsens and goes to stationary on a similar number.  
+Finally, it is interesting to note that although the number of stationary vehicles is very similar if not better for the DQL agents than for the fixedcycle, the overall waiting times are strongly worse.
 
 ## Low Traffic - High Traffic
-In this experiment, abbreviated lt-ht, agents were trained using the low traffic situation specified in the 2wsi-lt.rou.xml file and then evaluated on the situation present in 2wsi-ht.rou.xml.  
-The results were not satisfactory in that the fixedcycle agent performed better than all the others. It is evident how agents trained on a low traffic situation failed to adapt to a high traffic situation, in fact:  
+In this experiment, abbreviated lt-ht, agents were trained using the low traffic situation in the 2wsi-lt.rou.xml file and then evaluated on the situation in 2wsi-ht.rou.xml.  
+It is apparent how agents trained on a low traffic situation failed to adapt to a high traffic situation, in fact:  
 ![Number of stationary vehicles plot (run)](https://user-images.githubusercontent.com/104778397/221413176-45e816f4-8ce9-4e47-aec4-4e607517b211.png)  
 ![Total waiting time plot (run)](https://user-images.githubusercontent.com/104778397/221413179-d17f6b5a-2e5c-4527-9cba-8768b95a8aba.png)  
 In this experiment, although each model scored worse than before, as might be expected given the larger number of vehicles, the fixedcycle agent maintained the best values.  
@@ -318,10 +318,14 @@ In summary, the results of the experiments reported above, although they give a 
 For example, DQL agents, as opposed to fixedcycle and QL, have the most heterogeneous results among the 3 different runs. In fact, it often happens that there is one run scores significantly better, one run scores significantly worse, and the last run scores an average between the other two. This then leads the comparison of averages to lose the detail of those runs that got particularly good scores. The experiment in which this phenomenon is most evident is the lt-lt for agent dql_2, in fact from the following graphs it is possible to see that one run in particular performed exceptionally well, almost always better than even the fixedcycle:  
 ![Number of stationary vehicles plot (run)](https://user-images.githubusercontent.com/104778397/221413397-2816bcd1-eeb3-4057-bc18-9f8962bebd11.png)  
 ![Total waiting time plot (run)](https://user-images.githubusercontent.com/104778397/221413398-24253a9f-9cfe-4331-9e0c-b82543c3b981.png)  
-
+It is also possible to see in more detail why the mean of agent dql_2 in the lt-lt experiment has the first quarter better than the others:  
 ![Number of stationary vehicles plot (run)](https://user-images.githubusercontent.com/104778397/221413623-184885f8-0c6b-4800-9e94-c7a9bebf062a.png)  
 ![Total waiting time plot (run)](https://user-images.githubusercontent.com/104778397/221413628-9afd0f1b-2b44-4dc3-a5a3-030150e078a9.png)  
+There is indeed a run that initially has a very good score, however something happens whereby after about *2600* steps the number of stopped vehicles suddenly increases and remains more or less fixed at *114*.  
+Investigating what happened around that time may be worth it.  
+Also in these graphs we find the same situation described earlier, where one run has comparable and better results than the fixedcycle.
 
+It is always possible to compare the data in more detail by referring to the csv files.
 
 <br/>
 <br/>
