@@ -28,6 +28,11 @@
   - ### [States, Actions and Rewards](#states-actions-and-rewards-1)
   - ### [Configurations](#configurations-1)
 - ## [Experiments and results](#experiments-and-results-1)
+  - ### [Low Traffic - Low Traffic](#low-traffic---low-traffic-1)
+  - ### [Low Traffic - High Traffic](#low-traffic---high-traffic-1)
+  - ### [High Traffic - High Traffic](#high-traffic---high-traffic-1)
+  - ### [High Traffic - Low Traffic](#high-traffic---low-traffic-1)
+  - ### [General considerations](#general-considerations-1)
 - ## [Conclusions and possible developments](#conclusions-and-possible-developments-1)
 - ## [References](#references-1)
 
@@ -42,7 +47,8 @@ Specifically, 3 control schemes will then be compared:
 - Q-Learning: the traffic light is controlled by a reinforcement learning agent using the Q-Learning technique, discussed in detail below.  
 - Deep Q-Learning: the traffic light is controlled by a reinforcement learning agent using the Deep Q-Learning technique, discussed in detail below.  
 
-Each of these models will be trained with a certain traffic situation, and then the result of the training will be tested with the same traffic situation used for training and another one that was not seen during training.  
+For the QL and DQL variants, 2 different configurations with discount factor (gamma) variation will be tested.  
+Each of these models will be trained with 2 different traffic situations, first one with low traffic and then one with high traffic. Then the models will be evaluated both by re-running them on the same traffic situation and by running them on the traffic situation not seen during training.  
 This choice is motivated by wanting not only to compare the models with each other, but also to test how well the learning models can generalize, avoid overfitting, and thus adapt to different traffic situations.  
 The robustness of the agents is very important since in reality it is easy for a traffic light intersection to be subject to variable traffic: just think of the difference between rush hour and night time, or weekday and holiday months.
 
@@ -182,7 +188,7 @@ The file [2wsi.sumocfg](2wsi/2wsi.sumocfg) can be used to load the net and route
 <img align="right" src="https://user-images.githubusercontent.com/104778397/221368434-15e1b009-e95c-4823-a949-f735f1484288.png">
 The environment in which the agents were placed is a simple intersection with a single traffic light, which, as anticipated, is the 2WSI depicted on the image to the right.  
 This road network has been defined in the 2wsi.net.xml file which, following the SUMO standard, defines lanes, traffic lights, directions, etc.  
-Inside the files 2wsi-1.rou.xml and 2wsi-2.rou.xml, on the other hand, are the definitions for traffic situations, specifying how many vehicles per time unit there should be and which direction they should follow.  
+Inside the files 2wsi-lt.rou.xml and 2wsi-ht.rou.xml, on the other hand, are the definitions for traffic situations, specifying how many vehicles per time unit there should be and which direction they should follow.  
 
 <br/>
 <br/>
@@ -218,12 +224,103 @@ To evaluate the agents, the 4 system metrics offered by Sumo-RL were selected:
 For each run, csv files and graphs are generated representing the value of the metrics as the time instant (step) changes. The lower the value of the metric the better, except for `system_mean_speed` for which the opposite is true.
 Finally, graphs are also generated to compare the average results of each run.
 
+The 2 different traffic situations are homogeneous (with no change in traffic over time) and the only difference between them is that the high traffic one has 300 vehicles per hour, while the low traffic one has half that number, 150.
+
 <br/>
 <br/>
 
 # Experiments and results
 
+## Hyperparameters
+In each of the experiments reported below, the agent configurations were as follows:
+Fixedcycle:
+- name: `fixedcycle`
 
+QL-1:
+- name: `ql_1`
+- ⍺: *0.1*
+- γ: *0.75*
+- Initial ε: *1*
+- Final ε: *0.01*
+- ε decay: *0.9996*
+
+QL-2:
+- name: `ql_2`
+- ⍺: *0.1*
+- γ: *0.9*
+- Initial ε: *1*
+- Final ε: *0.01*
+- ε decay: *0.9996*
+
+DQL-1:
+- name: `dql_1`
+- ⍺: *0.1*
+- γ: *0.75*
+- Initial ε: *1*
+- Final ε: *0.01*
+- ε decay: *0.99*
+
+DQL-2:
+- name: `dql_2`
+- ⍺: *0.1*
+- γ: *0.9*
+- Initial ε: *1*
+- Final ε: *0.01*
+- ε decay: *0.99*
+
+It is important to note that the ε decay for QL agents indicates the multiplicative constant by which ε is multiplied with each decision made by the agent. A value of 0.9996 ensures that for much of the training the ε has a high value and thus the agent explores.  
+In contrast, for DQL agents, ε decay indicates the fraction of steps in which ε goes from the initial value to the final value. Again, the value of 0.99 ensures that for most steps the ε takes on another value and the agent explores.
+
+Finally, as transpires from the values listed above, the configurations are all very similar and change due to the type of model used by the agent, the value of the discount factor, or the decay of the exploration probability.  
+Obviously, the fixed-loop model has no hyperparameter configurations because it does not use any machine learning model.
+
+This document shows the results summuaries, you can view each graph within the repository under `experiments results`.
+
+In addition, the graphs shown below reflect the average of 3 different runs.
+
+## Low Traffic - Low Traffic
+In this experiment, abbreviated lt-lt, agents were trained using the low traffic situation specified in the 2wsi-lt.rou.xml file and then evaluated on the same situation.  
+The results were not satisfactory in that the fixedcycle agent performed better than all the others. For example, here are graphs showing the total number of stopped vehicles and the total sum of waiting times, both as the step changes:  
+
+IMMAGINI
+
+As can be seen, especially from the sum of waiting times, the fixedcycle agent enabled significantly better traffic management than the agents that learned by reinforcement.  
+Another interesting note is that the QL agents, in each graph, performed significantly worse than compared to the DQL agents.  
+Also peculiar is the first quarter run for agent dql_2 in that it manages to get a smaller number of stationary vehicles than fixedcycle, despite the fact that later this situation worsens and goes to an average similar number. Furthermore, comparing dql_1 and dql_2 the situation is very close, as in the second graph they alternate between who gets the best score, while in the first graph although dql_2 gets, as mentioned before, the best score in the first quarter, it subsequently maintains a worse average than dql_1.  
+Finally, it is interesting to note that although the number of stopped vehicles is very similar if not better for DQL agents than for fixedcycle, the overall waiting times are strongly worse.
+
+## Low Traffic - High Traffic
+In this experiment, abbreviated lt-ht, agents were trained using the low traffic situation specified in the 2wsi-lt.rou.xml file and then evaluated on the situation present in 2wsi-ht.rou.xml.  
+The results were not satisfactory in that the fixedcycle agent performed better than all the others. It is evident how agents trained on a low traffic situation failed to adapt to a high traffic situation, in fact:  
+
+IMMAGINI
+
+In this experiment, although each model scored worse than before, as might be expected given the larger number of vehicles, the fixedcycle agent maintained the best values.  
+In the number of stationary vehicles, although still the DQL agents perform better than the QLs, this time they fail to obtain values similar to fixedcycle.  
+In contrast to the previous experiment, here agent dql_1 is often better than dql_2, although they score very similar for the number of stopped vehicles.  
+Finally in the sum of waiting times this time QL agents, although almost always worse, do not always differ much from DQL agents.
+
+## High Traffic - High Traffic
+In this experiment, abbreviated ht-ht, agents were trained using the high traffic situation specified in the 2wsi-ht.rou.xml file and then evaluated on the same situation.  
+The results were not satisfactory as the fixedcycle agent performed better than any other:  
+
+IMMAGINI
+
+In this experiment, the dql_2 agent is almost always better than dql_1, which, on the other hand, gets similar if not worse results than the QL agents. The fixedcycle agent is the absolute best performer here.
+
+## High Traffic - Low Traffic
+In this experiment, abbreviated ht-lt, agents were trained using the high traffic situation specified in 2wsi-ht.rou.xml and then evaluated on the situation contained in 2wsi-lt.rou.xml.  
+The results were on average more satisfactory than the other experiments, in that at times a DQL agent manages to behave slightly better than fixedcycle:  
+
+IMMAGINI
+
+Indeed, it can be seen that in the number of stopped vehicles the dql_2 agent scores on average better than the fixedcycle. However, only in some short instances does it manage to achieve a comparable score to fixedcyle for waiting times.  
+Again, this time more than before, agent dql_1 does not perform much better than QLs.
+
+## General considerations
+In summary, the results of the experiments reported above, although they give a good general overview, leave out some interesting details repeated in each of them.  
+For example, DQL agents, as opposed to fixedcycle and QL, have the most heterogeneous results among the 3 different runs. In fact, it often happens that there is one run scores significantly better, one run scores significantly worse, and the last run scores an average between the other two. This then leads the comparison of averages to lose the detail of those runs that got particularly good scores. The experiment in which this phenomenon is most evident is the lt-lt for agent dql_2, in fact from the following graphs it is possible to see that one run in particular performed exceptionally well, almost always better than even the fixedcycle:  
+IMMAGINI
 
 <br/>
 <br/>
