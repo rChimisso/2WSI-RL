@@ -331,8 +331,13 @@ It is always possible to compare the data in more detail by referring to the csv
 <br/>
 
 # Conclusions and possible developments
+In conclusion, it could not be concluded from the results of the experiments conducted that the application of reinforcement-learning agents gives a significant advantage in traffic handling for 2WSI over the fixed cycle scheme.  
+However, it is evident how the simple QL model fails to handle traffic well, unlike DQL, which, on the other hand, in some cases achieved very good results.  
+Although with the experiments done, the usefulness of applying DRL to traffic management could not be affirmed, given the runs in which the agents using such a model demonstrated more efficient management than the fixed cycle, it is possible that by increasing the training time, choosing different values for the hyperparameters, and/or giving the agents the opportunity to learn over multiple episodes, an actual improvement and advantage in their use could be obtained and demonstrated.
 
-
+As just mentioned, therefore, subsequent more in-depth research on agents with DQL and their hyperparameters could lead to different and more satisfactory conclusions.  
+One could, for example, make each training run have multiple episodes, or examine the use of different combinations of hyperparameters, or even change the configuration of the environment.  
+Certainly then one could, to decrease the time required for training and evaluation, parallelize the execution of different agents.  
 
 <br/>
 <br/>
