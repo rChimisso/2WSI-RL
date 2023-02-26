@@ -281,9 +281,8 @@ In addition, the graphs shown below reflect the average of 3 different runs.
 ## Low Traffic - Low Traffic
 In this experiment, abbreviated lt-lt, agents were trained using the low traffic situation specified in the 2wsi-lt.rou.xml file and then evaluated on the same situation.  
 The results were not satisfactory in that the fixedcycle agent performed better than all the others. For example, here are graphs showing the total number of stopped vehicles and the total sum of waiting times, both as the step changes:  
-
-IMMAGINI
-
+![Number of stationary vehicles plot (run)](https://user-images.githubusercontent.com/104778397/221413117-a8d98268-e229-4be0-adbc-442c95e10a12.png)  
+![Total waiting time plot (run)](https://user-images.githubusercontent.com/104778397/221413124-df964ba5-8d16-442d-8b71-d86b6fe1cbd9.png)  
 As can be seen, especially from the sum of waiting times, the fixedcycle agent enabled significantly better traffic management than the agents that learned by reinforcement.  
 Another interesting note is that the QL agents, in each graph, performed significantly worse than compared to the DQL agents.  
 Also peculiar is the first quarter run for agent dql_2 in that it manages to get a smaller number of stationary vehicles than fixedcycle, despite the fact that later this situation worsens and goes to an average similar number. Furthermore, comparing dql_1 and dql_2 the situation is very close, as in the second graph they alternate between who gets the best score, while in the first graph although dql_2 gets, as mentioned before, the best score in the first quarter, it subsequently maintains a worse average than dql_1.  
@@ -292,9 +291,8 @@ Finally, it is interesting to note that although the number of stopped vehicles 
 ## Low Traffic - High Traffic
 In this experiment, abbreviated lt-ht, agents were trained using the low traffic situation specified in the 2wsi-lt.rou.xml file and then evaluated on the situation present in 2wsi-ht.rou.xml.  
 The results were not satisfactory in that the fixedcycle agent performed better than all the others. It is evident how agents trained on a low traffic situation failed to adapt to a high traffic situation, in fact:  
-
-IMMAGINI
-
+![Number of stationary vehicles plot (run)](https://user-images.githubusercontent.com/104778397/221413176-45e816f4-8ce9-4e47-aec4-4e607517b211.png)  
+![Total waiting time plot (run)](https://user-images.githubusercontent.com/104778397/221413179-d17f6b5a-2e5c-4527-9cba-8768b95a8aba.png)  
 In this experiment, although each model scored worse than before, as might be expected given the larger number of vehicles, the fixedcycle agent maintained the best values.  
 In the number of stationary vehicles, although still the DQL agents perform better than the QLs, this time they fail to obtain values similar to fixedcycle.  
 In contrast to the previous experiment, here agent dql_1 is often better than dql_2, although they score very similar for the number of stopped vehicles.  
@@ -303,24 +301,27 @@ Finally in the sum of waiting times this time QL agents, although almost always 
 ## High Traffic - High Traffic
 In this experiment, abbreviated ht-ht, agents were trained using the high traffic situation specified in the 2wsi-ht.rou.xml file and then evaluated on the same situation.  
 The results were not satisfactory as the fixedcycle agent performed better than any other:  
-
-IMMAGINI
-
+![Number of stationary vehicles plot (run)](https://user-images.githubusercontent.com/104778397/221413208-23845d79-5fab-48fc-b672-9534f0914811.png)  
+![Total waiting time plot (run)](https://user-images.githubusercontent.com/104778397/221413218-a3f4c18f-189b-417f-8f51-59782abdbdb0.png)  
 In this experiment, the dql_2 agent is almost always better than dql_1, which, on the other hand, gets similar if not worse results than the QL agents. The fixedcycle agent is the absolute best performer here.
 
 ## High Traffic - Low Traffic
 In this experiment, abbreviated ht-lt, agents were trained using the high traffic situation specified in 2wsi-ht.rou.xml and then evaluated on the situation contained in 2wsi-lt.rou.xml.  
 The results were on average more satisfactory than the other experiments, in that at times a DQL agent manages to behave slightly better than fixedcycle:  
-
-IMMAGINI
-
+![Number of stationary vehicles plot (run)](https://user-images.githubusercontent.com/104778397/221413247-2bfb3ebf-2315-4eb9-8a89-75582ba424f8.png)  
+![Total waiting time plot (run)](https://user-images.githubusercontent.com/104778397/221413250-e513cfa8-de36-4a4d-8b71-90a28d14ba1f.png)  
 Indeed, it can be seen that in the number of stopped vehicles the dql_2 agent scores on average better than the fixedcycle. However, only in some short instances does it manage to achieve a comparable score to fixedcyle for waiting times.  
 Again, this time more than before, agent dql_1 does not perform much better than QLs.
 
 ## General considerations
 In summary, the results of the experiments reported above, although they give a good general overview, leave out some interesting details repeated in each of them.  
 For example, DQL agents, as opposed to fixedcycle and QL, have the most heterogeneous results among the 3 different runs. In fact, it often happens that there is one run scores significantly better, one run scores significantly worse, and the last run scores an average between the other two. This then leads the comparison of averages to lose the detail of those runs that got particularly good scores. The experiment in which this phenomenon is most evident is the lt-lt for agent dql_2, in fact from the following graphs it is possible to see that one run in particular performed exceptionally well, almost always better than even the fixedcycle:  
-IMMAGINI
+![Number of stationary vehicles plot (run)](https://user-images.githubusercontent.com/104778397/221413397-2816bcd1-eeb3-4057-bc18-9f8962bebd11.png)  
+![Total waiting time plot (run)](https://user-images.githubusercontent.com/104778397/221413398-24253a9f-9cfe-4331-9e0c-b82543c3b981.png)  
+
+![Number of stationary vehicles plot (run)](https://user-images.githubusercontent.com/104778397/221413623-184885f8-0c6b-4800-9e94-c7a9bebf062a.png)  
+![Total waiting time plot (run)](https://user-images.githubusercontent.com/104778397/221413628-9afd0f1b-2b44-4dc3-a5a3-030150e078a9.png)  
+
 
 <br/>
 <br/>
