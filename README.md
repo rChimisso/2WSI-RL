@@ -1,5 +1,5 @@
 # Study on the application of reinforcement learning to the management of a traffic light intersection.
-#### Università degli Studi di Milano Bicocca, Riccardo Chimisso 866009 - Alberto Ricci 869271
+#### Università degli Studi di Milano Bicocca - Riccardo Chimisso 866009
 ---
 
 <br/>
